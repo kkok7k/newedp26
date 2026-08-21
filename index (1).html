@@ -1,0 +1,3918 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>뉴엔돌핀 모임 대시보드 v8fresh</title>
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --accent-color: #3498db;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --border-color: #ddd;
+      --soft-gray: #f3f5f7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Malgun Gothic', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo-box {
+      width: 50px;
+      height: 50px;
+      border: 2px dashed white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      background: rgba(255,255,255,0.1);
+      font-size: 11px;
+      text-align: center;
+      color: white;
+    }
+
+    .logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .header-right {
+      text-align: right;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .weather-box {
+      background: rgba(255,255,255,0.1);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px 40px;
+    }
+
+    .nav-tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .nav-btn {
+      background-color: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px 10px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      background-color: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .section-content {
+      display: none;
+      background: var(--card-bg);
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .section-content.active { display: block; }
+
+    h2 {
+      margin-top: 0;
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--accent-color);
+      padding-bottom: 10px;
+    }
+
+    h3, h4 { color: var(--primary-color); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      margin-bottom: 20px;
+    }
+
+    table th, table td {
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      text-align: center;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    table th { background-color: #f1f2f6; }
+
+    input[type="text"], input[type="date"], input[type="file"], input[type="password"], input[type="email"], input[type="color"], select, textarea {
+      padding: 8px;
+      margin: 3px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    textarea { resize: vertical; }
+
+    input[type="color"] {
+      width: 70px;
+      height: 42px;
+      padding: 2px;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button.action-btn {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    button.action-btn:hover { opacity: 0.9; }
+
+    .subtle-btn { background: #7f8c8d; }
+    .danger-btn { background: #e74c3c; }
+    .success-btn { background: #27ae60; }
+    .orange-btn { background: #d35400; }
+
+    .calendar-header-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+
+    .calendar-table { width: 100%; table-layout: fixed; }
+    .calendar-table th { background: #e9ecef; padding: 10px; }
+
+    .calendar-cell {
+      height: 120px;
+      vertical-align: top;
+      text-align: left;
+      padding: 4px;
+      background: #fff;
+      position: relative;
+    }
+
+    .calendar-cell:hover { background: #f8f9fa; }
+
+    .day-header-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .day-number { font-weight: bold; font-size: 13px; }
+
+    .add-event-btn {
+      background: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .event-item {
+      font-size: 10px;
+      color: white;
+      padding: 2px 4px;
+      border-radius: 3px;
+      margin-top: 2px;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .type-lecture { background-color: #e74c3c; }
+    .type-meeting { background-color: #3498db; }
+    .type-event   { background-color: #f39c12; }
+    .type-study   { background-color: #27ae60; }
+    .type-etc     { background-color: #9b59b6; }
+
+    .rooms-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .room-box {
+      background: #ffffff;
+      border: 2px solid #2c3e50;
+      border-radius: 8px;
+      width: 160px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      overflow: hidden;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+
+    .room-box:hover { transform: translateY(-3px); }
+
+    .room-header {
+      background: #2c3e50;
+      color: white;
+      padding: 12px 10px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .room-body {
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .simple-room-box .room-body { display: none; }
+    .simple-room-box .room-header {
+      min-height: 72px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      line-height: 1.4;
+      padding: 10px;
+    }
+
+    .asset-thumb {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+    }
+
+    .member-room-content {
+      display: none;
+      margin-top: 20px;
+      background: #fcfcfc;
+      border: 1px solid #e2e2e2;
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .member-room-content.active { display: block; }
+
+    .sub-room-title {
+      margin-top: 0;
+      color: #2c3e50;
+      font-size: 18px;
+      border-left: 5px solid #3498db;
+      padding-left: 10px;
+    }
+
+    .inline-flex {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .small-guide {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+
+    .admin-box, .soft-panel {
+      background: #f8fbff;
+      border: 1px solid #dbe9f5;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 10px;
+    }
+
+    .soft-panel { background: #fafafa; }
+
+    .detail-panel {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #fbfcfd;
+      border: 1px solid #dde5eb;
+    }
+
+    .file-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #eef5fb;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #2c3e50;
+      margin: 2px 0;
+    }
+
+    .preview-box {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .hwp-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+
+    .hwp-table th {
+      background: #f1f2f6;
+      width: 25%;
+      text-align: right;
+      padding: 8px;
+    }
+
+    .hwp-table td { padding: 8px; text-align: left; }
+
+    @media (max-width: 768px) {
+      .calendar-header-nav {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+        text-align: left;
+      }
+
+      .room-box { width: calc(50% - 10px); }
+    }
+
+    @media (max-width: 480px) {
+      .room-box { width: 100%; }
+      .container { padding: 0 12px 30px; }
+      .section-content { padding: 18px; }
+      header { padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <label class="logo-box" id="logoContainer" title="클릭하여 로고 이미지 업로드">
+        로고등록
+        <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="uploadLogo(event)">
+      </label>
+      <h1>뉴엔돌핀 모임 대시보드</h1>
+    </div>
+    <div class="header-right">
+      <div class="weather-box">☀️ 서울 28°C (맑음)</div>
+      <div id="liveClock">실시간 시계 로딩중...</div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="nav-tabs">
+      <div class="nav-btn active" onclick="switchTab('calendar', this)">📅 월 일정표</div>
+      <div class="nav-btn" onclick="switchTab('activity', this)">📂 활동일지</div>
+      <div class="nav-btn" onclick="switchTab('assets', this)">🛠️ 관리방</div>
+      <div class="nav-btn" onclick="switchTab('rental', this)">📋 대여장</div>
+      <div class="nav-btn" onclick="switchTab('ideas', this)">💡 아이디어방</div>
+      <div class="nav-btn" onclick="switchTab('memberMgmt', this)">👥 회원 모임관리</div>
+    </div>
+
+    <div class="soft-panel" style="margin-top:14px; border:2px dashed #74b9ff; background:#f8fbff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div>
+          <strong style="color:#2c3e50;">데이터 관리 / 백업</strong>
+          <div id="backupStatusText" class="small-guide" style="margin-top:6px;">자동백업 상태 확인 전</div>
+        </div>
+        <div class="inline-flex">
+          <button class="action-btn" onclick="downloadBackupFile()">전체 백업 다운로드</button>
+          <button class="action-btn subtle-btn" onclick="triggerRestoreBackupInput()">백업 복원</button>
+          <button class="action-btn subtle-btn" onclick="restoreLatestAutoBackup()">최근 자동백업 복원</button>
+          <button class="action-btn subtle-btn" onclick="openGoogleDriveBackupGuide()">구글드라이브 안내</button>
+          <input type="file" id="restoreBackupInput" accept=".json,application/json" style="display:none;" onchange="restoreBackupFile(event)">
+        </div>
+      </div>
+      <p class="small-guide" style="margin-top:8px;">* 지금 버전은 <b>자동 임시백업</b>을 이 웹 안에 저장하고, <b>전체 백업 다운로드</b>로 백업파일을 내려받아 보관할 수 있습니다. 구글드라이브 <b>자동 업로드</b>는 파일형 웹 한계로 완전 자동은 어렵고, 백업파일을 구글드라이브 폴더에 저장하는 방식이 가장 안전합니다.</p>
+    </div>
+
+    <div id="calendar" class="section-content active">
+      <div class="calendar-header-nav">
+        <button class="action-btn" onclick="changeMonth(-1)">◀ 이전</button>
+        <h2 id="calendarTitle" style="margin:0; border:none; font-size:18px;">일정표</h2>
+        <button class="action-btn" onclick="changeMonth(1)">다음 ▶</button>
+      </div>
+      <p style="text-align:center; color:#666; font-size:12px;">날짜 안의 <b>[+] 버튼</b>을 눌러 일정을 추가하고, 일정을 클릭해 상세 내용과 <b>네이버 지도</b>를 확인하세요.</p>
+      <div id="calendarGridContainer" style="overflow-x:auto;"></div>
+    </div>
+
+    <div id="activity" class="section-content">
+      <h2>활동일지 등록</h2>
+      <div class="soft-panel">
+        <label style="font-size:13px; font-weight:bold;">날짜 선택</label>
+        <input type="date" id="actDate">
+        <label style="font-size:13px; font-weight:bold;">일지 제목</label>
+        <input type="text" id="actTitle" placeholder="일지 제목 입력">
+        <label style="font-size:13px; font-weight:bold;">파일 첨부 (.hwp, .png, .pdf 등)</label>
+        <input type="file" id="actFile" accept=".hwp,.hwpx,.pdf,.png,.jpg,.jpeg,.doc,.docx,.txt">
+        <div class="small-guide" style="margin:4px 0 8px 0;">사진·PDF는 바로 볼 수 있고, 한글파일(.hwp/.hwpx)은 기기 환경에 따라 다운로드 후 보거나 외부 앱으로 열릴 수 있습니다.</div>
+        <button class="action-btn" onclick="addActivity()">활동일지 및 파일 업로드</button>
+      </div>
+      <p class="small-guide">* 아래의 <b>연도별 방</b>을 클릭하여 월별 소분류 방을 확인하세요.</p>
+      <div id="activityYearRooms" class="rooms-grid"></div>
+    </div>
+
+    <div id="assets" class="section-content">
+      <h2>관리방</h2>
+      <div class="soft-panel" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="newCategoryName" placeholder="새 분류 이름 (예: 소모품, 교구, 보드게임)" style="max-width:320px; margin:0;">
+        <label style="font-size:12px; color:#555;">방 색</label>
+        <input type="color" id="newAssetCategoryColor" value="#e67e22">
+        <button class="action-btn" style="margin:0;" onclick="addAssetCategory()">+ 새 분류 추가</button>
+      </div>
+      <p class="small-guide">* 아래 분류를 클릭하면 품목, 수량, 보관장소, 상태, 메모를 관리할 수 있습니다.</p>
+      <div id="assetCategoryContainer" class="rooms-grid"></div>
+    </div>
+
+    <div id="rental" class="section-content">
+      <h2>대여장 관리</h2>
+
+      <div class="soft-panel">
+        <div id="rentalPasswordSetupBox" class="admin-box" style="display:none; margin-bottom:10px;">
+          <p class="small-guide">처음 1회 대여 담당자 비밀번호를 설정하세요. 관리자방 비밀번호와 별도로 사용됩니다. 비밀번호를 잊으면 이 파일을 여는 브라우저의 저장정보를 지운 뒤 다시 설정해야 합니다.</p>
+          <div class="inline-flex">
+            <input type="password" id="newRentalPassword" placeholder="새 대여방 비밀번호" style="max-width:260px;">
+            <button class="action-btn" onclick="setRentalPassword()">비밀번호 설정</button>
+          </div>
+        </div>
+
+        <div id="rentalPasswordLoginBox" class="admin-box" style="display:none; margin-bottom:10px;">
+          <p class="small-guide">반납 처리, 대여비 완납 표시, 삭제는 대여 담당자만 할 수 있습니다.</p>
+          <div class="inline-flex">
+            <input type="password" id="rentalLoginPassword" placeholder="대여방 비밀번호 입력" style="max-width:260px;">
+            <button class="action-btn" onclick="loginRentalRoom()">대여담당자 입장</button>
+          </div>
+        </div>
+
+        <div id="rentalManagerBox" class="admin-box" style="display:none; margin-bottom:10px;">
+          <div class="inline-flex" style="justify-content:space-between; width:100%;">
+            <strong>대여 담당자 모드</strong>
+            <div class="inline-flex"><button class="action-btn subtle-btn" onclick="changeRentalPassword()">비밀번호 변경</button><button class="action-btn subtle-btn" onclick="logoutRentalRoom()">로그아웃</button></div>
+          </div>
+          <p class="small-guide" style="margin-top:8px;">지금은 반납일, 대여비 완납, 삭제까지 수정할 수 있습니다.</p>
+        </div>
+      </div>
+
+      <div class="soft-panel">
+        <h4 style="margin:0 0 10px 0; color:#2c3e50;">새 대여 등록</h4>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:8px; align-items:center;">
+          <input type="text" id="rentalItem" placeholder="품목명">
+          <input type="text" id="rentalBorrower" placeholder="대여자 이름">
+          <input type="date" id="rentalDate">
+          <input type="text" id="rentalNote" placeholder="기타 메모">
+          <button class="action-btn" style="margin:0;" onclick="addRentalEntry()">+ 대여 등록</button>
+        </div>
+      </div>
+
+      <p class="small-guide">* 대여 등록은 회원도 가능하며, <b>반납일 / 대여비 완납 / 삭제</b>는 대여 담당자 비밀번호로만 처리되게 만들었습니다. 비밀번호를 잊었을 때는 회원 모임관리 > 관리자방의 <b>최고관리자 재설정 모드</b>에서 새로 바꿀 수 있습니다.</p>
+      <div style="overflow-x:auto;">
+        <table id="rentalTable">
+          <thead>
+            <tr><th>품목</th><th>대여자</th><th>대여일</th><th>반납일</th><th>대여비완납</th><th>기타</th><th>저장/관리</th></tr>
+          </thead>
+          <tbody id="rentalTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="ideas" class="section-content">
+      <h2>아이디어방</h2>
+
+      <div class="soft-panel">
+        <div class="inline-flex">
+          <input type="text" id="ideaRoomName" placeholder="새 아이디어 방 이름 (예: 언어방, 수학방)" style="max-width:320px;">
+          <label style="font-size:12px; color:#555;">방 색</label>
+          <input type="color" id="ideaRoomColor" value="#2980b9">
+          <button class="action-btn" onclick="addIdeaRoom()">+ 방 만들기</button>
+        </div>
+        <p class="small-guide">* 사각형 방을 만들고 들어가서 텍스트, 파일, 사진, 간단한 동영상, 링크를 올릴 수 있습니다. 긴 영상은 <b>링크 등록</b> 방식이 더 안정적입니다. 짧은 동영상은 아래 미리보기 영역에서 바로 재생할 수 있게 수정했습니다.</p>
+      </div>
+
+      <div id="ideaRoomContainer" class="rooms-grid"></div>
+
+      <div id="ideaRoomDetail" class="detail-panel" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <h3 id="ideaRoomDetailTitle" class="sub-room-title" style="margin-bottom:0;">아이디어 방</h3>
+          <div class="inline-flex">
+            <label style="font-size:12px; color:#555;">방 색</label>
+            <input type="color" id="ideaRoomEditColor" value="#2980b9">
+            <button class="action-btn subtle-btn" onclick="saveCurrentIdeaRoomColor()">방 색 저장</button>
+            <button class="action-btn subtle-btn" onclick="renameCurrentIdeaRoom()">방 이름 수정</button>
+            <button class="action-btn danger-btn" onclick="deleteCurrentIdeaRoom()">방 삭제</button>
+          </div>
+        </div>
+
+        <input type="hidden" id="ideaPostEditId" value="">
+        <div class="soft-panel">
+          <input type="text" id="ideaSearchInput" placeholder="이 방 검색 (제목, 내용, 작성자, 링크)" oninput="renderIdeaPosts(currentIdeaRoomId)" style="margin-bottom:10px; max-width:420px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+            <input type="text" id="ideaPostTitle" placeholder="자료 제목">
+            <input type="text" id="ideaPostAuthor" placeholder="작성자 이름">
+            <input type="text" id="ideaPostLink" placeholder="영상/외부 링크(URL)">
+          </div>
+          <textarea id="ideaPostText" rows="5" placeholder="텍스트 내용을 입력하세요"></textarea>
+          <label class="small-guide" style="display:block; margin-top:4px;">파일 업로드: 사진, PDF, 문서, 짧은 동영상(mp4/webm 등). 수정할 때 새 파일을 선택하면 기존 파일이 새 파일로 교체됩니다.</label>
+          <input type="file" id="ideaPostFile" accept="image/*,video/*,.pdf,.hwp,.hwpx,.doc,.docx,.txt,.ppt,.pptx,.xlsx,.xls">
+          <div id="ideaPostCurrentFileInfo" class="small-guide" style="margin-top:6px; color:#666;">현재 첨부파일 없음</div>
+          <div class="inline-flex">
+            <button class="action-btn" onclick="saveIdeaPost()">자료 저장</button>
+            <button class="action-btn subtle-btn" onclick="resetIdeaPostForm()">입력 초기화</button>
+          </div>
+        </div>
+
+        <div id="ideaPostTitleList" class="rooms-grid"></div>
+
+        <div id="ideaPostDetailPanel" class="detail-panel" style="display:none; margin-top:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h4 id="ideaPostDetailTitle" style="margin:0; color:#2c3e50;">자료 상세</h4>
+            <div class="inline-flex">
+              <button class="action-btn success-btn" onclick="editCurrentIdeaPost()">수정</button>
+              <button class="action-btn danger-btn" onclick="deleteCurrentIdeaPost()">삭제</button>
+            </div>
+          </div>
+          <div id="ideaPostDetailMeta" class="small-guide" style="margin-top:8px;"></div>
+          <div id="ideaPostDetailLink" class="small-guide" style="margin-top:6px;"></div>
+          <div id="ideaPostDetailText" class="soft-panel" style="margin-top:10px; white-space:pre-wrap;"></div>
+          <div id="ideaPostDetailFileArea" class="soft-panel" style="margin-top:10px;"></div>
+        </div>
+
+        <div id="ideaMediaPreviewBox" class="preview-box" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <strong>미리보기 / 재생</strong>
+            <button class="action-btn subtle-btn" style="padding:4px 8px; font-size:11px;" onclick="closeIdeaMediaPreview()">닫기</button>
+          </div>
+          <div id="ideaMediaPreviewContent" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="memberMgmt" class="section-content">
+      <h2>회원 모임관리</h2>
+      <p class="small-guide">* 아래 방을 클릭하면 회원 관련 자료를 관리할 수 있습니다.</p>
+
+      <div class="rooms-grid">
+        <div class="room-box" onclick="openMemberRoom('memberListRoom')">
+          <div class="room-header" style="background:#16a085;">👤 회원명단</div>
+          <div class="room-body">회원 정보 등록 및 수정</div>
+        </div>
+
+        <div class="room-box" onclick="openMemberRoom('rulesRoom')">
+          <div class="room-header" style="background:#8e44ad;">📘 회원규칙</div>
+          <div class="room-body">규칙 작성 및 파일 업로드</div>
+        </div>
+
+        <div class="room-box" onclick="openMemberRoom('bylawsRoom')">
+          <div class="room-header" style="background:#6c5ce7;">📗 회칙</div>
+          <div class="room-body">회칙 작성 및 파일 업로드</div>
+        </div>
+
+        <div class="room-box" onclick="openMemberRoom('projectsRoom')">
+          <div class="room-header" style="background:#d35400;">🚀 추진사업</div>
+          <div class="room-body">사업 이름 클릭 후 내용 보기</div>
+        </div>
+
+        <div class="room-box" onclick="openMemberRoom('adminRoom')">
+          <div class="room-header" style="background:#c0392b;">🔒 관리자방</div>
+          <div class="room-body">비밀번호 보호 / 관리자 전용</div>
+        </div>
+      </div>
+
+      <div id="memberListRoom" class="member-room-content active">
+        <h3 class="sub-room-title">회원명단방</h3>
+        <input type="hidden" id="memberEditIndex" value="">
+        <div class="soft-panel">
+          <input type="text" id="memberSearchInput" placeholder="회원명단 검색 (이름, 아이디, 전화번호, 이메일)" oninput="renderMembers()" style="margin-bottom:10px; max-width:420px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+            <input type="text" id="memberName" placeholder="이름">
+            <input type="text" id="memberUserId" placeholder="아이디">
+            <input type="text" id="memberPhone" placeholder="전화번호">
+            <input type="email" id="memberEmail" placeholder="이메일">
+          </div>
+          <div class="inline-flex" style="margin-top:10px;">
+            <button class="action-btn" onclick="saveMember()">회원 저장</button>
+            <button class="action-btn subtle-btn" onclick="resetMemberForm()">입력 초기화</button>
+          </div>
+        </div>
+        <table id="memberTable">
+          <tr><th>이름</th><th>아이디</th><th>전화번호</th><th>이메일</th><th>관리</th></tr>
+        </table>
+      </div>
+
+      <div id="rulesRoom" class="member-room-content">
+        <h3 class="sub-room-title">회원규칙 방</h3>
+        <p class="small-guide">글을 직접 적거나 파일을 업로드할 수 있습니다. <b>PDF 업로드 가능</b>, 수정/삭제 가능합니다.</p>
+        <input type="hidden" id="rulesEditId" value="">
+        <div class="soft-panel">
+          <input type="text" id="rulesTitle" placeholder="제목">
+          <textarea id="rulesText" rows="5" placeholder="회원규칙 내용을 입력하세요"></textarea>
+          <input type="file" id="rulesFile" accept=".pdf,.hwp,.hwpx,.doc,.docx,.txt,.png,.jpg,.jpeg,.mp4,.webm">
+          <div class="inline-flex">
+            <button class="action-btn" onclick="saveMeetingDoc('rules')">저장</button>
+            <button class="action-btn subtle-btn" onclick="resetMeetingDocForm('rules')">입력 초기화</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>제목</th><th>내용</th><th>파일</th><th>등록일</th><th>관리</th></tr>
+          </thead>
+          <tbody id="rulesTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="bylawsRoom" class="member-room-content">
+        <h3 class="sub-room-title">회칙 방</h3>
+        <p class="small-guide">추진사업방과 같은 구조입니다. 이름만 보이는 사각형 방을 만들고, 클릭해서 들어가면 제목/내용/파일/표를 작성·수정할 수 있습니다.</p>
+
+        <div class="soft-panel">
+          <div class="inline-flex">
+            <input type="text" id="newBylawRoomName" placeholder="새 회칙 방 이름" style="max-width:320px;">
+            <button class="action-btn" onclick="addBylawRoom()">+ 회칙 방 만들기</button>
+          </div>
+        </div>
+
+        <div id="bylawRoomContainer" class="rooms-grid"></div>
+
+        <div id="bylawDetailPanel" class="detail-panel" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h3 id="bylawDetailTitle" class="sub-room-title" style="margin-bottom:0;">회칙 상세</h3>
+            <div class="inline-flex">
+              <button class="action-btn subtle-btn" onclick="renameCurrentBylawRoom()">방 이름 수정</button>
+              <button class="action-btn danger-btn" onclick="deleteCurrentBylawRoom()">방 삭제</button>
+            </div>
+          </div>
+
+          <div class="soft-panel">
+            <input type="text" id="bylawInnerTitle" placeholder="안쪽 제목 입력 (예: 총칙, 회원 자격, 회비 규정)">
+            <textarea id="bylawDesc" rows="6" placeholder="회칙 내용을 입력하세요"></textarea>
+            <input type="text" id="bylawLink" placeholder="관련 링크(URL) - 필요 시 입력">
+            <label class="small-guide" style="display:block;">표 작성: 한 줄이 한 행, 칸 구분은 | 사용<br>예: 항목 | 내용</label>
+            <textarea id="bylawTableText" rows="6" placeholder="예시&#10;항목 | 내용&#10;회비 | 월 1만원"></textarea>
+            <input type="file" id="bylawFile" accept=".pdf,.hwp,.hwpx,.doc,.docx,.txt,.png,.jpg,.jpeg,.mp4,.webm,.ppt,.pptx,.xls,.xlsx">
+            <div id="bylawFileViewArea"></div>
+            <div class="inline-flex">
+              <button class="action-btn" onclick="saveBylawDetail()">내용 저장</button>
+              <button class="action-btn subtle-btn" onclick="refreshBylawPreview()">표 미리보기</button>
+            </div>
+          </div>
+
+          <div class="preview-box">
+            <strong>표 미리보기</strong>
+            <div id="bylawTablePreview" style="margin-top:8px; color:#555;">표 내용이 없습니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="projectsRoom" class="member-room-content">
+        <h3 class="sub-room-title">추진사업 방</h3>
+        <p class="small-guide">관리자방처럼 사업 이름만 보이는 사각형 방으로 만들고, 클릭해서 들어가면 제목/내용/파일/표를 작성·수정할 수 있게 했습니다.</p>
+
+        <div class="soft-panel">
+          <div class="inline-flex">
+            <input type="text" id="newProjectName" placeholder="새 추진사업 방 이름" style="max-width:320px;">
+            <button class="action-btn orange-btn" onclick="addProjectRoom()">+ 사업 방 만들기</button>
+          </div>
+          <input type="text" id="projectSearchInput" placeholder="추진사업 검색 (방 이름, 제목, 내용, 작성자)" oninput="renderProjectRooms()" style="margin-top:10px; max-width:420px;">
+        </div>
+
+        <div id="projectRoomContainer" class="rooms-grid"></div>
+
+        <div id="projectDetailPanel" class="detail-panel" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h3 id="projectDetailTitle" class="sub-room-title" style="margin-bottom:0;">추진사업 상세</h3>
+            <div class="inline-flex">
+              <button class="action-btn subtle-btn" onclick="renameCurrentProjectRoom()">방 이름 수정</button>
+              <button class="action-btn danger-btn" onclick="deleteCurrentProjectRoom()">방 삭제</button>
+            </div>
+          </div>
+
+          <div class="soft-panel">
+            <input type="text" id="projectInnerTitle" placeholder="안쪽 제목 입력 (예: 2026 공모전 준비)">
+            <input type="text" id="projectAuthor" placeholder="작성자 이름">
+            <textarea id="projectDesc" rows="6" placeholder="내용을 입력하세요. 예: 사업 개요, 진행상황, 담당자, 회의내용 등"></textarea>
+            <input type="text" id="projectLink" placeholder="관련 링크(URL) - 필요 시 입력">
+            <label class="small-guide" style="display:block;">표 직접 작성</label>
+            <textarea id="projectTableText" rows="6" placeholder="예시&#10;항목 | 담당 | 일정&#10;공모전 준비 | 김OO | 9월" style="display:none;"></textarea>
+            <div class="soft-panel" style="margin-top:8px;">
+              <div class="inline-flex" style="margin-bottom:8px;">
+                <button class="action-btn subtle-btn" onclick="addProjectTableRow()">행 추가</button>
+                <button class="action-btn subtle-btn" onclick="addProjectTableColumn()">열 추가</button>
+              </div>
+              <div id="projectEditableTable" style="overflow:auto;"></div>
+            </div>
+            <input type="file" id="projectFile" accept=".pdf,.hwp,.hwpx,.doc,.docx,.txt,.png,.jpg,.jpeg,.mp4,.webm,.ppt,.pptx,.xls,.xlsx">
+            <div id="projectFileViewArea"></div>
+            <div class="inline-flex">
+              <button class="action-btn orange-btn" onclick="saveProjectDetail()">내용 저장</button>
+            </div>
+          </div>
+          <div id="projectMetaInfo" class="small-guide" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <div id="adminRoom" class="member-room-content">
+        <h3 class="sub-room-title">관리자방</h3>
+
+        <div id="adminPasswordSetupBox" class="admin-box" style="display:none;">
+          <p class="small-guide">처음 1회 관리자 비밀번호를 설정하세요. 비밀번호를 잊어버리면 아래의 <b>최고관리자 재설정 모드</b>에서 새 비밀번호로 다시 바꿀 수 있습니다.</p>
+          <input type="password" id="newAdminPassword" placeholder="새 관리자 비밀번호">
+          <button class="action-btn" onclick="setAdminPassword()">비밀번호 설정</button>
+        </div>
+
+        <div id="adminPasswordLoginBox" class="admin-box" style="display:none;">
+          <p class="small-guide">관리자만 입장할 수 있습니다. 비밀번호를 잊었으면 아래의 <b>최고관리자 재설정 모드</b>에서 관리자방 비밀번호를 다시 설정하세요.</p>
+          <input type="password" id="adminLoginPassword" placeholder="관리자 비밀번호 입력">
+          <div class="inline-flex">
+            <button class="action-btn" onclick="loginAdminRoom()">입장</button>
+          </div>
+        </div>
+
+        <div id="masterAdminSetupBox" class="admin-box" style="display:none; margin-top:12px; border:2px dashed #8e44ad;">
+          <p class="small-guide"><b>최고관리자 재설정용 비밀번호</b>를 처음 1회 설정하세요. 나중에 관리자방 비밀번호나 대여방 비밀번호를 잊었을 때 이 비밀번호로 재설정할 수 있습니다.</p>
+          <div class="inline-flex">
+            <input type="password" id="newMasterAdminPassword" placeholder="새 최고관리자 비밀번호" style="max-width:260px;">
+            <button class="action-btn" style="background:#8e44ad;" onclick="setMasterAdminPassword()">최고관리자 비밀번호 설정</button>
+          </div>
+        </div>
+
+        <div id="masterAdminLoginBox" class="admin-box" style="display:none; margin-top:12px; border:2px dashed #8e44ad;">
+          <p class="small-guide"><b>비밀번호 분실 시</b> 최고관리자 비밀번호로 관리자방/대여방 비밀번호를 재설정할 수 있습니다.</p>
+          <div class="inline-flex">
+            <input type="password" id="masterAdminLoginPassword" placeholder="최고관리자 비밀번호 입력" style="max-width:260px;">
+            <button class="action-btn" style="background:#8e44ad;" onclick="loginMasterAdmin()">재설정 모드 입장</button>
+          </div>
+        </div>
+
+        <div id="masterAdminControlBox" class="admin-box" style="display:none; margin-top:12px; border:2px dashed #8e44ad; background:#faf5ff;">
+          <div class="inline-flex" style="justify-content:space-between; width:100%;">
+            <strong style="color:#6c3483;">최고관리자 재설정 모드</strong>
+            <div class="inline-flex">
+              <button class="action-btn subtle-btn" onclick="changeMasterAdminPassword()">최고관리자 비밀번호 변경</button>
+              <button class="action-btn subtle-btn" onclick="logoutMasterAdmin()">로그아웃</button>
+            </div>
+          </div>
+          <p class="small-guide" style="margin-top:8px;">여기서는 관리자방 비밀번호와 대여방 비밀번호를 새 비밀번호로 다시 설정할 수 있습니다.</p>
+          <div class="inline-flex" style="margin-top:8px;">
+            <button class="action-btn" style="background:#8e44ad;" onclick="resetAdminPasswordByMaster()">관리자방 비밀번호 재설정</button>
+            <button class="action-btn" style="background:#9b59b6;" onclick="resetRentalPasswordByMaster()">대여방 비밀번호 재설정</button>
+          </div>
+        </div>
+
+        <div id="adminControlBox" class="admin-box" style="display:none;">
+          <div class="inline-flex" style="justify-content:space-between; width:100%;">
+            <strong>관리자 전용 카테고리 관리</strong>
+            <div class="inline-flex"><button class="action-btn subtle-btn" onclick="changeAdminPassword()">비밀번호 변경</button><button class="action-btn subtle-btn" onclick="logoutAdminRoom()">로그아웃</button></div>
+          </div>
+
+          <div class="soft-panel" style="margin-top:12px;">
+            <h4 style="margin:0 0 8px 0; color:#2c3e50;">회원 프로필방</h4>
+            <p class="small-guide">먼저 초록색 이름 상자에 들어갈 이름을 추가하고, 그 이름을 클릭하면 해당 프로필 내용을 작성·수정할 수 있습니다.</p>
+            <div class="inline-flex" style="margin-bottom:10px;">
+              <input type="text" id="memberProfileNameInput" placeholder="프로필 이름 입력" style="max-width:260px;">
+              <button class="action-btn" onclick="addMemberProfileBox()">+ 이름 상자 추가</button>
+            </div>
+            <div id="memberProfileRoomContainer" class="rooms-grid"></div>
+            <div id="memberProfileDetailPanel" class="detail-panel" style="display:none; margin-top:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                <h4 id="memberProfileDetailTitle" style="margin:0; color:#2c3e50;">회원 프로필</h4>
+                <div class="inline-flex">
+                  <button class="action-btn subtle-btn" onclick="closeMemberProfileDetail()">닫기</button>
+                  <button class="action-btn danger-btn" onclick="deleteCurrentMemberProfile()">프로필 삭제</button>
+                </div>
+              </div>
+              <div class="soft-panel" style="margin-top:10px;">
+                <div id="memberProfileStatusText" class="small-guide" style="margin-bottom:8px; color:#666;">이름 상자를 클릭하면 해당 프로필을 작성하거나 수정할 수 있습니다.</div>
+                <textarea id="memberProfileText" rows="6" placeholder="프로필 내용을 입력하세요. 예: 경력, 강의 주제, 소개"></textarea>
+                <input type="file" id="memberProfileFile" accept="image/*,video/*,.pdf,.hwp,.hwpx,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx">
+                <div id="memberProfileFileViewArea" class="small-guide" style="margin-top:8px; color:#666;">첨부파일 없음</div>
+                <div class="inline-flex" style="margin-top:8px;">
+                  <button class="action-btn" onclick="saveCurrentMemberProfile()">프로필 저장</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="inline-flex" style="margin-top:10px;">
+            <input type="text" id="adminCategoryName" placeholder="카테고리 이름 (예: 강사 프로필)" style="max-width:320px;">
+            <button class="action-btn" onclick="saveAdminCategory()">+ 카테고리 방 만들기</button>
+            <button class="action-btn subtle-btn" onclick="resetAdminCategoryForm()">입력 초기화</button>
+          </div>
+          <p class="small-guide">* 제목만 보이는 사각형 방으로 만들어집니다. 방 안에서는 내용 작성과 파일 업로드가 가능합니다.</p>
+
+          <div id="adminCategoryRoomContainer" class="rooms-grid"></div>
+
+          <div id="adminCategoryDetailPanel" class="detail-panel" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <h3 id="adminCategoryDetailTitle" class="sub-room-title" style="margin-bottom:0;">관리자 카테고리</h3>
+              <div class="inline-flex">
+                <button class="action-btn subtle-btn" onclick="renameCurrentAdminCategory()">방 이름 수정</button>
+                <button class="action-btn danger-btn" onclick="deleteCurrentAdminCategory()">방 삭제</button>
+              </div>
+            </div>
+
+            <div class="soft-panel">
+              <input type="text" id="adminCategoryLink" placeholder="관련 링크(URL) - 필요 시 입력">
+              <textarea id="adminCategoryContent" rows="6" placeholder="내용을 입력하세요. 예: 강사 프로필, 소개, 경력, 강의 분야 등"></textarea>
+              <input type="file" id="adminCategoryFile" accept="image/*,video/*,.pdf,.hwp,.hwpx,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx">
+              <div id="adminCategoryFileViewArea"></div>
+              <div class="inline-flex">
+                <button class="action-btn" onclick="saveAdminCategoryDetail()">내용 저장</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="yearModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="yearModalTitle" style="margin-top:0; color:#2c3e50;">연도별 월 선택</h3>
+      <p class="small-guide">확인할 월(소분류) 상자를 선택하세요.</p>
+      <div id="monthRoomsContainer" class="rooms-grid" style="margin-top:10px;"></div>
+      <div style="text-align:right; margin-top:20px;">
+        <button class="action-btn subtle-btn" onclick="closeYearModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="monthModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="monthModalTitle" style="margin-top:0; color:#2c3e50;">월별 자료 목록</h3>
+      <div style="max-height:60vh; overflow-y:auto;">
+        <table>
+          <thead>
+            <tr><th>날짜</th><th>제목</th><th>파일 보기 / 삭제</th></tr>
+          </thead>
+          <tbody id="monthFilesTableBody"></tbody>
+        </table>
+      </div>
+      <div class="small-guide" style="margin-top:10px;">* 사진·PDF는 바로보기로 확인하고, 한글파일(.hwp/.hwpx)은 다운로드 후 보거나 외부 앱으로 열릴 수 있습니다.</div>
+      <div style="text-align:right; margin-top:15px;">
+        <button class="action-btn subtle-btn" onclick="closeMonthModal()">이전으로</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="assetCategoryModal" class="modal-overlay">
+    <div class="modal-content" style="max-width:980px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #3498db; padding-bottom:10px; margin-bottom:15px; gap:10px; flex-wrap:wrap;">
+        <h3 id="assetCategoryModalTitle" style="margin:0; color:#2c3e50;">분류명</h3>
+        <div class="inline-flex">
+          <label style="font-size:12px; color:#555;">방 색</label>
+          <input type="color" id="assetCategoryEditColor" value="#e67e22">
+          <button class="action-btn subtle-btn" style="padding:4px 8px; font-size:12px;" onclick="saveCurrentAssetCategoryColor()">색 저장</button>
+          <button class="action-btn danger-btn" style="padding:4px 8px; font-size:12px;" onclick="deleteCurrentAssetCategory()">🗑️ 이 분류 삭제</button>
+        </div>
+      </div>
+
+      <div class="soft-panel" style="margin-bottom:15px;">
+        <h4 style="margin:0 0 10px 0; font-size:14px; color:#2c3e50;">새 품목 등록</h4>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; align-items:center;">
+          <input type="text" id="assetNameInput" placeholder="품목명">
+          <input type="text" id="assetQtyInput" placeholder="수량 (예: 2개)">
+          <input type="text" id="assetPlaceInput" placeholder="보관장소">
+          <select id="assetStatusInput">
+            <option value="사용가능">사용가능</option>
+            <option value="대여중">대여중</option>
+            <option value="수리중">수리중</option>
+            <option value="폐기예정">폐기예정</option>
+          </select>
+          <input type="text" id="assetNoteInput" placeholder="메모">
+          <input type="file" id="assetImageInput" accept="image/*">
+          <button class="action-btn" style="margin:0;" onclick="addAssetItem()">추가</button>
+        </div>
+      </div>
+
+      <div style="max-height:50vh; overflow-y:auto;">
+        <table>
+          <thead>
+            <tr><th>사진</th><th>품목명</th><th>수량</th><th>보관장소</th><th>상태</th><th>메모</th><th>관리</th></tr>
+          </thead>
+          <tbody id="assetItemsTableBody"></tbody>
+        </table>
+      </div>
+      <div style="text-align:right; margin-top:15px;">
+        <button class="action-btn subtle-btn" onclick="closeAssetCategoryModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="eventModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 id="modalTitleDate" style="margin-top:0; color:#2c3e50;">일정 입력하기</h3>
+      <table class="hwp-table">
+        <tr><th>성격</th><td>
+          <select id="modalInputType">
+            <option value="lecture">🔴 강의</option>
+            <option value="meeting">🔵 회의</option>
+            <option value="event">🟠 행사</option>
+            <option value="study">🟢 스터디</option>
+            <option value="etc">🟣 기타</option>
+          </select>
+        </td></tr>
+        <tr><th>제목</th><td><input type="text" id="modalInputTitle" placeholder="제목"></td></tr>
+        <tr><th>간단내용</th><td><input type="text" id="modalInputDesc" placeholder="간단한 내용 입력"></td></tr>
+        <tr><th>시간</th><td><input type="text" id="modalInputTime" value="14:00"></td></tr>
+        <tr><th>장소</th><td><input type="text" id="modalInputPlace" placeholder="장소 입력시 네이버 지도 연동"></td></tr>
+      </table>
+      <div style="text-align:right;">
+        <button class="action-btn subtle-btn" onclick="closeEventModal()">취소</button>
+        <button class="action-btn" onclick="saveEventModal()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewEventModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top:0; color:#2c3e50;">일정 상세 및 수정</h3>
+      <table class="hwp-table">
+        <tr><th>제목</th><td><input type="text" id="editInputTitle"></td></tr>
+        <tr><th>간단내용</th><td><input type="text" id="editInputDesc"></td></tr>
+        <tr><th>시간</th><td><input type="text" id="editInputTime"></td></tr>
+        <tr><th>장소/지도</th><td>
+          <input type="text" id="editInputPlace">
+          <div id="mapButtonContainer" style="margin-top:5px;"></div>
+        </td></tr>
+      </table>
+      <div style="text-align:right; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button class="action-btn danger-btn" onclick="deleteCurrentEvent()">삭제</button>
+        <div>
+          <button class="action-btn subtle-btn" onclick="closeViewEventModal()">취소</button>
+          <button class="action-btn success-btn" onclick="updateCurrentEvent()">수정완료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=v8fresh"></script>
+<script>
+    let db;
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    let eventsData = JSON.parse(localStorage.getItem('eventsData')) || {};
+    let selectedDateKey = '', viewingDateKey = '', viewingIndex = -1;
+    let currentActiveYear = '', currentActiveMonth = '', currentActiveAssetCat = '';
+    let currentIdeaRoomId = null;
+    let currentIdeaRoomName = '';
+    let currentIdeaPostId = null;
+    let currentProjectId = null;
+    let currentAdminRoomId = null;
+    let currentBylawRoomId = null;
+    let currentProfileMemberKey = '';
+    let currentProfileMemberName = '';
+
+    let memberListData = JSON.parse(localStorage.getItem('memberListData')) || [];
+    const SUPABASE_URL = 'https://sidfpxdubxtpkhxunsdy.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_5wbKozmeacMCa5skEB2SHQ_c9nuoH5o';
+    const supabaseClient = (window.supabase && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+      : null;
+    let memberSyncTimer = null;
+    let rentalSyncTimer = null;
+
+    function cacheMembersLocally() {
+      localStorage.setItem('memberListData', JSON.stringify(memberListData));
+    }
+
+    async function loadMembersFromSupabase(showError) {
+      if (!supabaseClient) {
+        renderMembers();
+        renderMemberProfileRoom();
+        return false;
+      }
+      try {
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('id, name, user_id, phone, email, created_at')
+          .order('id', { ascending: true });
+        if (error) throw error;
+        memberListData = (data || []).map(row => ({
+          id: row.id,
+          name: row.name || '',
+          userId: row.user_id || '',
+          phone: row.phone || '',
+          email: row.email || '',
+          created_at: row.created_at || ''
+        }));
+        cacheMembersLocally();
+        renderMembers();
+        renderMemberProfileRoom();
+        return true;
+      } catch (err) {
+        console.error('Supabase members load failed:', err);
+        if (showError) alert('공용 회원명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        renderMembers();
+        renderMemberProfileRoom();
+        return false;
+      }
+    }
+
+    async function saveMemberToSupabase(member, editIndex) {
+      if (!supabaseClient) return false;
+      const payload = {
+        name: member.name || '',
+        user_id: member.userId || '',
+        phone: member.phone || '',
+        email: member.email || ''
+      };
+      let error = null;
+      if (editIndex === '') {
+        ({ error } = await supabaseClient.from('members').insert(payload));
+      } else {
+        const existing = memberListData[Number(editIndex)];
+        if (!existing || !existing.id) throw new Error('수정할 회원의 공용 ID를 찾지 못했습니다.');
+        ({ error } = await supabaseClient.from('members').update(payload).eq('id', existing.id));
+      }
+      if (error) throw error;
+      return true;
+    }
+
+    async function deleteMemberFromSupabase(index) {
+      if (!supabaseClient) return false;
+      const existing = memberListData[index];
+      if (!existing || !existing.id) throw new Error('삭제할 회원의 공용 ID를 찾지 못했습니다.');
+      const { error } = await supabaseClient.from('members').delete().eq('id', existing.id);
+      if (error) throw error;
+      return true;
+    }
+    function cacheRentalsLocally() {
+      localStorage.setItem('rentalData', JSON.stringify(rentalData));
+    }
+
+    function rentalHasStableId(row) {
+      return row && typeof row.id === 'number' && row.id > 0;
+    }
+
+    async function ensureSupabaseReady(maxWaitMs = 10000) {
+      if (supabaseClient) return supabaseClient;
+      const start = Date.now();
+      while (Date.now() - start < maxWaitMs) {
+        await new Promise(r => setTimeout(r, 250));
+        if (window.supabase && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+          try {
+            const c = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+            supabaseClient = c;
+            window.supabaseClient = c;
+            return supabaseClient;
+          } catch (e) { console.error('late supabase init failed:', e); }
+        }
+      }
+      return null;
+    }
+
+    function rentalQueuePending(row) {
+      const q = JSON.parse(localStorage.getItem('rentalPending') || '[]');
+      q.push({ ...row, __queued: 1 });
+      localStorage.setItem('rentalPending', JSON.stringify(q));
+    }
+
+    function rentalDrainPending() {
+      const q = JSON.parse(localStorage.getItem('rentalPending') || '[]');
+      const out = [];
+      q.forEach(r => { const { __queued, ...clean } = r; out.push(clean); });
+      return out;
+    }
+
+    function rentalClearPendingIfSynced(ids) {
+      const q = JSON.parse(localStorage.getItem('rentalPending') || '[]');
+      const remaining = q.filter(r => !ids.includes(r.__id));
+      if (remaining.length === 0) localStorage.removeItem('rentalPending');
+      else localStorage.setItem('rentalPending', JSON.stringify(remaining));
+    }
+
+    async function loadRentalsFromSupabase(showError) {
+      const client = supabaseClient || await ensureSupabaseReady(8000);
+      if (!client) {
+        renderRentalRows();
+        return false;
+      }
+      try {
+        const { data, error } = await client
+          .from('rentals')
+          .select('id, item, borrower, rent_date, return_date, fee_status, note, created_at')
+          .order('id', { ascending: true });
+        if (error) throw error;
+
+        // MERGE: 다른 기기 데이터는 보존, 같은 id 는 클라우드 값으로 갱신,
+        //        id 없는 로컬-only 행은 그대로 유지.
+        const cloudById = {};
+        (data || []).forEach(row => {
+          cloudById[row.id] = {
+            id: row.id,
+            item: row.item || '',
+            borrower: row.borrower || '',
+            rentDate: row.rent_date || '',
+            returnDate: row.return_date || '',
+            feeStatus: row.fee_status || '',
+            note: row.note || '',
+            created_at: row.created_at || ''
+          };
+        });
+
+        const seen = new Set();
+        const merged = [];
+        rentalData.forEach(local => {
+          if (local.id && cloudById[local.id]) {
+            merged.push(cloudById[local.id]);
+            seen.add(local.id);
+          } else if (!local.id) {
+            merged.push(local);
+          }
+          // else: local.has(id) && !cloud.has(id) → 다른 기기에서 삭제됨 → 버림
+        });
+        Object.values(cloudById).forEach(row => {
+          if (!seen.has(row.id)) merged.push(row);
+        });
+
+        rentalData = merged;
+        cacheRentalsLocally();
+        renderRentalRows();
+        await rentalFlushPending().catch(() => {});
+        return true;
+      } catch (err) {
+        console.error('Supabase rentals load failed:', err);
+        if (showError) alert('공용 대여장을 불러오지 못했습니다: ' + (err && err.message ? err.message : err));
+        renderRentalRows();
+        return false;
+      }
+    }
+
+    async function rentalFlushPending() {
+      const client = supabaseClient || await ensureSupabaseReady(8000);
+      if (!client) return;
+      const pending = rentalDrainPending();
+      if (!pending.length) return;
+      const syncedIds = [];
+      for (const row of pending) {
+        try {
+          const payload = {
+            item: row.item || '', borrower: row.borrower || '',
+            rent_date: row.rentDate || null,
+            return_date: row.returnDate || null,
+            fee_status: row.feeStatus || '',
+            note: row.note || ''
+          };
+          const { data, error } = await client.from('rentals').insert(payload).select('id').single();
+          if (error) throw error;
+          if (data && data.id) syncedIds.push(data.id);
+        } catch (e) { console.warn('pending flush failed', e); }
+      }
+      if (syncedIds.length) await loadRentalsFromSupabase(false).catch(() => {});
+    }
+
+    async function saveRentalToSupabase(row, editIndex) {
+      if (!supabaseClient) return false;
+      const payload = {
+        item: row.item || '',
+        borrower: row.borrower || '',
+        rent_date: row.rentDate || null,
+        return_date: row.returnDate || null,
+        fee_status: row.feeStatus || '',
+        note: row.note || ''
+      };
+      let error = null;
+      if (editIndex === '') {
+        ({ error } = await supabaseClient.from('rentals').insert(payload));
+      } else {
+        const existing = rentalData[Number(editIndex)];
+        if (!existing || !existing.id) throw new Error('수정할 대여 기록의 공용 ID를 찾지 못했습니다.');
+        ({ error } = await supabaseClient.from('rentals').update(payload).eq('id', existing.id));
+      }
+      if (error) throw error;
+      return true;
+    }
+
+    async function deleteRentalFromSupabase(index) {
+      if (!supabaseClient) return false;
+      const existing = rentalData[index];
+      if (!existing || !existing.id) throw new Error('삭제할 대여 기록의 공용 ID를 찾지 못했습니다.');
+      const { error } = await supabaseClient.from('rentals').delete().eq('id', existing.id);
+      if (error) throw error;
+      return true;
+    }
+
+    let assetCategoryColors = JSON.parse(localStorage.getItem('assetCategoryColors') || '{}');
+    let rentalData = JSON.parse(localStorage.getItem('rentalData') || '[{"item":"노트북 거치대","borrower":"김경옥","rentDate":"2026-06-01","returnDate":"2026-06-15","feeStatus":"납입완료","note":"이상없음"}]');
+    let adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
+    let rentalRoomPassword = localStorage.getItem('rentalRoomPassword') || '';
+    let masterAdminPassword = localStorage.getItem('masterAdminPassword') || '';
+      assetCategoryColors = JSON.parse(localStorage.getItem('assetCategoryColors') || '{}');
+    let isAdminAuthenticated = false;
+    let isRentalAuthenticated = false;
+    let isMasterAdminAuthenticated = false;
+
+    const typeInfo = {
+      lecture: { icon: '🎤', class: 'type-lecture' },
+      meeting: { icon: '👥', class: 'type-meeting' },
+      event:   { icon: '🎉', class: 'type-event' },
+      study:   { icon: '📚', class: 'type-study' },
+      etc:     { icon: '📌', class: 'type-etc' }
+    };
+
+    function setClockNow() {
+      document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
+    }
+    setClockNow();
+    setInterval(setClockNow, 1000);
+
+    function esc(v) {
+      return String(v ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function shortText(v, len = 30) {
+      const s = String(v || '');
+      return s.length > len ? s.slice(0, len) + '...' : s;
+    }
+
+    function makeUrl(blob) {
+      return URL.createObjectURL(blob);
+    }
+
+    function openBlob(blob) {
+      const url = makeUrl(blob);
+      window.open(url, '_blank');
+    }
+
+    function detectFileKind(fileName, fileType) {
+      const name = String(fileName || '').toLowerCase();
+      const type = String(fileType || '').toLowerCase();
+      if (type.startsWith('video/') || /\.(mp4|webm|ogg|mov)$/i.test(name)) return 'video';
+      if (type.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp)$/i.test(name)) return 'image';
+      if (type.includes('pdf') || /\.pdf$/i.test(name)) return 'pdf';
+      return 'other';
+    }
+
+    function buildInlinePreview(blob, fileName) {
+      if (!blob) return '<div style="color:#777;">미리볼 파일이 없습니다.</div>';
+      const kind = detectFileKind(fileName, blob.type);
+      const url = makeUrl(blob);
+      if (kind === 'video') return `<video controls style="max-width:100%; width:100%; border-radius:8px;" src="${url}"></video>`;
+      if (kind === 'image') return `<img src="${url}" alt="미리보기" style="max-width:100%; border-radius:8px;">`;
+      if (kind === 'pdf') return `<iframe src="${url}" style="width:100%; height:520px; border:none; border-radius:8px;"></iframe>`;
+      return `<a href="${url}" target="_blank">파일 열기</a>`;
+    }
+
+    function getNowStamp() {
+      return new Date().toLocaleString();
+    }
+
+    function formatTimeForFile() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+
+    function updateBackupStatus(text) {
+      const el = document.getElementById('backupStatusText');
+      if (el) el.innerText = text;
+    }
+
+    function getStoreDataPromise(storeName) {
+      return new Promise((resolve) => {
+        if (!db) { resolve([]); return; }
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).getAll();
+        req.onsuccess = (e) => resolve(e.target.result || []);
+        req.onerror = () => resolve([]);
+      });
+    }
+
+    function clearStorePromise(storeName) {
+      return new Promise((resolve) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      });
+    }
+
+    function addRecordsPromise(storeName, records) {
+      return new Promise((resolve) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        (records || []).forEach(item => store.add(item));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+      });
+    }
+
+    function blobToDataURL(blob) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function serializeRecord(record) {
+      const copy = { ...record };
+      if (copy.fileBlob instanceof Blob) {
+        copy.fileBlob = {
+          __blob: true,
+          name: copy.fileName || copy.fileBlob.name || 'file',
+          type: copy.fileBlob.type || 'application/octet-stream',
+          dataUrl: await blobToDataURL(copy.fileBlob)
+        };
+      }
+      return copy;
+    }
+
+    function dataUrlToFile(dataUrl, fileName, fileType) {
+      const arr = dataUrl.split(',');
+      const mime = fileType || (arr[0].match(/:(.*?);/) || [])[1] || 'application/octet-stream';
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) u8arr[n] = bstr.charCodeAt(n);
+      return new File([u8arr], fileName || 'file', { type: mime });
+    }
+
+    function reviveRecord(record) {
+      const copy = { ...record };
+      if (copy.fileBlob && copy.fileBlob.__blob) {
+        copy.fileBlob = dataUrlToFile(copy.fileBlob.dataUrl, copy.fileBlob.name || copy.fileName || 'file', copy.fileBlob.type || 'application/octet-stream');
+      }
+      return copy;
+    }
+
+    async function collectRawBackupData() {
+      return {
+        exportedAt: getNowStamp(),
+        localStorageData: {
+          eventsData: localStorage.getItem('eventsData') || '{}',
+          memberListData: localStorage.getItem('memberListData') || '[]',
+          rentalData: localStorage.getItem('rentalData') || '[]',
+          adminRoomPassword: localStorage.getItem('adminRoomPassword') || '',
+          rentalRoomPassword: localStorage.getItem('rentalRoomPassword') || '',
+          masterAdminPassword: localStorage.getItem('masterAdminPassword') || '',
+          assetCategoryColors: localStorage.getItem('assetCategoryColors') || '{}' 
+        },
+        indexedDB: {
+          activities: await getStoreDataPromise('activities'),
+          assets: await getStoreDataPromise('assets'),
+          meetingDocs: await getStoreDataPromise('meetingDocs'),
+          ideaRooms: await getStoreDataPromise('ideaRooms'),
+          ideaPosts: await getStoreDataPromise('ideaPosts'),
+          projects: await getStoreDataPromise('projects'),
+          adminRooms: await getStoreDataPromise('adminRooms'),
+          bylawRooms: await getStoreDataPromise('bylawRooms'),
+          memberProfiles: await getStoreDataPromise('memberProfiles')
+        }
+      };
+    }
+
+    async function collectSerializableBackupData() {
+      const raw = await collectRawBackupData();
+      const serialized = {
+        version: 'v11-minimal',
+        exportedAt: raw.exportedAt,
+        localStorageData: raw.localStorageData,
+        indexedDB: {}
+      };
+      for (const [storeName, records] of Object.entries(raw.indexedDB)) {
+        serialized.indexedDB[storeName] = [];
+        for (const record of records) serialized.indexedDB[storeName].push(await serializeRecord(record));
+      }
+      return serialized;
+    }
+
+    async function saveAutoBackupSnapshot(reason = '자동백업') {
+      if (!db) return;
+      const payload = await collectRawBackupData();
+      const tx = db.transaction('autoBackups', 'readwrite');
+      const store = tx.objectStore('autoBackups');
+      store.add({ createdAt: Date.now(), savedAt: getNowStamp(), reason, payload });
+      tx.oncomplete = function() {
+        const tx2 = db.transaction('autoBackups', 'readwrite');
+        const store2 = tx2.objectStore('autoBackups');
+        store2.getAll().onsuccess = function(e) {
+          const rows = (e.target.result || []).sort((a, b) => b.createdAt - a.createdAt);
+          rows.slice(5).forEach(row => store2.delete(row.id));
+          if (rows[0]) updateBackupStatus(`자동임시백업 완료: ${rows[0].savedAt}`);
+        };
+      };
+    }
+
+    async function downloadBackupFile() {
+      const data = await collectSerializableBackupData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `newendorphin_backup_${formatTimeForFile()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      updateBackupStatus(`백업파일 다운로드 완료: ${getNowStamp()}`);
+    }
+
+    function triggerRestoreBackupInput() {
+      document.getElementById('restoreBackupInput').click();
+    }
+
+    async function applyRawBackupData(data) {
+      const localData = data.localStorageData || {};
+      localStorage.setItem('eventsData', localData.eventsData || '{}');
+      localStorage.setItem('memberListData', localData.memberListData || '[]');
+      localStorage.setItem('rentalData', localData.rentalData || '[]');
+      localStorage.setItem('adminRoomPassword', localData.adminRoomPassword || '');
+      localStorage.setItem('rentalRoomPassword', localData.rentalRoomPassword || '');
+      localStorage.setItem('masterAdminPassword', localData.masterAdminPassword || '');
+      localStorage.setItem('assetCategoryColors', localData.assetCategoryColors || '{}');
+      eventsData = JSON.parse(localStorage.getItem('eventsData') || '{}');
+      memberListData = JSON.parse(localStorage.getItem('memberListData') || '[]');
+      rentalData = JSON.parse(localStorage.getItem('rentalData') || '[]');
+      adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
+      rentalRoomPassword = localStorage.getItem('rentalRoomPassword') || '';
+      masterAdminPassword = localStorage.getItem('masterAdminPassword') || '';
+      isAdminAuthenticated = false;
+      isRentalAuthenticated = false;
+      isMasterAdminAuthenticated = false;
+
+      const targets = ['activities','assets','meetingDocs','ideaRooms','ideaPosts','projects','adminRooms','bylawRooms','memberProfiles'];
+      for (const name of targets) await clearStorePromise(name);
+      for (const name of targets) {
+        const rows = (data.indexedDB && data.indexedDB[name]) ? data.indexedDB[name].map(reviveRecord) : [];
+        await addRecordsPromise(name, rows);
+      }
+      renderCalendar();
+      renderMembers();
+      renderActivityYearRooms();
+      renderAssetCategories();
+      renderIdeaRooms();
+      renderProjectRooms();
+      renderBylawRooms();
+      renderAdminCategories();
+      renderAdminRoom();
+      renderRentalRoom();
+      renderMeetingDocs('rules');
+      updateBackupStatus(`복원 완료: ${getNowStamp()}`);
+    }
+
+    async function restoreBackupFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        await applyRawBackupData(parsed);
+        alert('백업 복원이 완료되었습니다.');
+      } catch (err) {
+        alert('백업 복원 중 오류가 발생했습니다. 파일 형식을 확인하세요.');
+      }
+      event.target.value = '';
+    }
+
+    async function restoreLatestAutoBackup() {
+      if (!db) return;
+      const tx = db.transaction('autoBackups', 'readonly');
+      tx.objectStore('autoBackups').getAll().onsuccess = async function(e) {
+        const rows = (e.target.result || []).sort((a, b) => b.createdAt - a.createdAt);
+        if (rows.length === 0) { alert('저장된 자동백업이 없습니다.'); return; }
+        if (!confirm(`최근 자동백업(${rows[0].savedAt})으로 복원하시겠습니까?`)) return;
+        await applyRawBackupData(rows[0].payload);
+        alert('최근 자동백업으로 복원되었습니다.');
+      };
+    }
+
+    function openGoogleDriveBackupGuide() {
+      window.open('https://drive.google.com/drive/my-drive', '_blank');
+      alert('이 파일형 웹에서는 구글드라이브 자동 업로드까지는 어렵습니다. 대신 전체 백업 다운로드 후 구글드라이브 폴더나 구글드라이브 웹에 올려 두는 방식을 추천합니다. 진짜 자동 업로드는 서버형 공용웹 단계에서 연결할 수 있습니다.');
+    }
+
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.section-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      if (el) el.classList.add('active');
+    }
+
+    function uploadLogo(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById('logoContainer').innerHTML = `<img src="${e.target.result}" alt="로고">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function parseTableTextToHtml(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return '표 내용이 없습니다.';
+
+      const rows = raw.split(/\n+/).map(line => line.trim()).filter(Boolean);
+      if (rows.length === 0) return '표 내용이 없습니다.';
+
+      let html = '<table><tbody>';
+      rows.forEach((row, idx) => {
+        const cols = row.split('|').map(c => esc(c.trim()));
+        html += '<tr>';
+        cols.forEach(col => {
+          html += idx === 0 ? `<th>${col}</th>` : `<td>${col}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function saveEvents() {
+      localStorage.setItem('eventsData', JSON.stringify(eventsData));
+    }
+
+    function renderCalendar() {
+      const gridContainer = document.getElementById('calendarGridContainer');
+      document.getElementById('calendarTitle').innerText = `${currentYear}년 ${currentMonth + 1}월 일정표`;
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      let html = `<table class="calendar-table"><tr><th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th></tr><tr>`;
+      let dayCount = 1;
+      let totalCells = Math.ceil((firstDay + lastDate) / 7) * 7;
+
+      for (let i = 0; i < totalCells; i++) {
+        if (i < firstDay || dayCount > lastDate) {
+          html += `<td class="calendar-cell" style="background:#f8f9fa;"></td>`;
+        } else {
+          const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayCount).padStart(2, '0')}`;
+          let eventHtml = '';
+          if (eventsData[dateKey]) {
+            eventsData[dateKey].forEach((ev, idx) => {
+              const t = typeInfo[ev.type] || typeInfo.etc;
+              eventHtml += `<div class="event-item ${t.class}" onclick="openViewEventModal('${dateKey}', ${idx})">${t.icon} [${esc(ev.time)}] ${esc(ev.title)}</div>`;
+            });
+          }
+          html += `<td class="calendar-cell">
+            <div class="day-header-area">
+              <span class="day-number">${dayCount}</span>
+              <button class="add-event-btn" onclick="openEventModal('${dateKey}')">+</button>
+            </div>
+            ${eventHtml}
+          </td>`;
+          dayCount++;
+        }
+        if ((i + 1) % 7 === 0 && i < totalCells - 1) html += `</tr><tr>`;
+      }
+      html += `</tr></table>`;
+      gridContainer.innerHTML = html;
+    }
+
+    function changeMonth(dir) {
+      currentMonth += dir;
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      renderCalendar();
+    }
+
+    function openEventModal(dateKey) {
+      selectedDateKey = dateKey;
+      document.getElementById('modalTitleDate').innerText = `${dateKey} 일정 추가`;
+      document.getElementById('modalInputTitle').value = '';
+      document.getElementById('modalInputDesc').value = '';
+      document.getElementById('modalInputTime').value = '14:00';
+      document.getElementById('modalInputPlace').value = '';
+      document.getElementById('eventModal').style.display = 'flex';
+    }
+
+    function closeEventModal() {
+      document.getElementById('eventModal').style.display = 'none';
+    }
+
+    function saveEventModal() {
+      const title = document.getElementById('modalInputTitle').value.trim();
+      if (!title) { alert('제목을 입력하세요'); return; }
+      if (!eventsData[selectedDateKey]) eventsData[selectedDateKey] = [];
+      eventsData[selectedDateKey].push({
+        type: document.getElementById('modalInputType').value,
+        title,
+        desc: document.getElementById('modalInputDesc').value.trim(),
+        time: document.getElementById('modalInputTime').value.trim(),
+        place: document.getElementById('modalInputPlace').value.trim()
+      });
+      saveEvents();
+      closeEventModal();
+      renderCalendar();
+    }
+
+    function openViewEventModal(dateKey, idx) {
+      viewingDateKey = dateKey;
+      viewingIndex = idx;
+      const ev = eventsData[dateKey][idx];
+      document.getElementById('editInputTitle').value = ev.title || '';
+      document.getElementById('editInputDesc').value = ev.desc || '';
+      document.getElementById('editInputTime').value = ev.time || '';
+      document.getElementById('editInputPlace').value = ev.place || '';
+      const mapCont = document.getElementById('mapButtonContainer');
+      if (ev.place) {
+        mapCont.innerHTML = `<a href="https://map.naver.com/v5/search/${encodeURIComponent(ev.place)}" target="_blank" class="action-btn" style="display:inline-block; text-decoration:none; padding:4px 8px; font-size:11px;">📍 네이버 지도 보기</a>`;
+      } else {
+        mapCont.innerHTML = '';
+      }
+      document.getElementById('viewEventModal').style.display = 'flex';
+    }
+
+    function closeViewEventModal() {
+      document.getElementById('viewEventModal').style.display = 'none';
+    }
+
+    function updateCurrentEvent() {
+      if (!eventsData[viewingDateKey] || !eventsData[viewingDateKey][viewingIndex]) return;
+      eventsData[viewingDateKey][viewingIndex].title = document.getElementById('editInputTitle').value.trim();
+      eventsData[viewingDateKey][viewingIndex].desc = document.getElementById('editInputDesc').value.trim();
+      eventsData[viewingDateKey][viewingIndex].time = document.getElementById('editInputTime').value.trim();
+      eventsData[viewingDateKey][viewingIndex].place = document.getElementById('editInputPlace').value.trim();
+      saveEvents();
+      closeViewEventModal();
+      renderCalendar();
+    }
+
+    function deleteCurrentEvent() {
+      if (confirm('삭제하시겠습니까?')) {
+        eventsData[viewingDateKey].splice(viewingIndex, 1);
+        if (eventsData[viewingDateKey].length === 0) delete eventsData[viewingDateKey];
+        saveEvents();
+        closeViewEventModal();
+        renderCalendar();
+      }
+    }
+
+    const dbRequest = indexedDB.open('NewEndorphinDB', 11);
+    dbRequest.onupgradeneeded = function(e) {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains('activities')) db.createObjectStore('activities', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('assets')) db.createObjectStore('assets', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('meetingDocs')) db.createObjectStore('meetingDocs', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('ideaRooms')) db.createObjectStore('ideaRooms', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('ideaPosts')) db.createObjectStore('ideaPosts', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('projects')) db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('adminRooms')) db.createObjectStore('adminRooms', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('bylawRooms')) db.createObjectStore('bylawRooms', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('autoBackups')) db.createObjectStore('autoBackups', { keyPath: 'id', autoIncrement: true });
+      if (!db.objectStoreNames.contains('memberProfiles')) db.createObjectStore('memberProfiles', { keyPath: 'id', autoIncrement: true });
+    };
+
+    dbRequest.onsuccess = function(e) {
+      db = e.target.result;
+      renderActivityYearRooms();
+      renderAssetCategories();
+      renderMeetingDocs('rules');
+      renderBylawRooms();
+      renderIdeaRooms();
+      renderProjectRooms();
+      renderAdminCategories();
+      updateBackupStatus('데이터 불러오기 완료');
+      setTimeout(() => saveAutoBackupSnapshot('처음 실행 자동백업'), 800);
+    };
+
+    function addActivity() {
+      const dateVal = document.getElementById('actDate').value;
+      const title = document.getElementById('actTitle').value.trim();
+      const fileInput = document.getElementById('actFile');
+      if (!dateVal || !title || fileInput.files.length === 0) {
+        alert('날짜, 제목, 그리고 파일을 모두 선택해주세요!');
+        return;
+      }
+      const file = fileInput.files[0];
+      const [year, month] = dateVal.split('-');
+      const tx = db.transaction('activities', 'readwrite');
+      const store = tx.objectStore('activities');
+      store.add({ year, month, title, date: dateVal, fileName: file.name, fileBlob: file });
+      tx.oncomplete = function() {
+        alert('활동일지와 파일이 성공적으로 등록되었습니다!');
+        document.getElementById('actDate').value = '';
+        document.getElementById('actTitle').value = '';
+        fileInput.value = '';
+        renderActivityYearRooms();
+      };
+    }
+
+    function renderActivityYearRooms() {
+      if (!db) return;
+      const tx = db.transaction('activities', 'readonly');
+      const store = tx.objectStore('activities');
+      const request = store.getAll();
+      request.onsuccess = function(e) {
+        const activitiesData = e.target.result;
+        const container = document.getElementById('activityYearRooms');
+        container.innerHTML = '';
+        const years = {};
+        activitiesData.forEach(item => {
+          const yr = String(item.year).trim();
+          if (!years[yr]) years[yr] = [];
+          years[yr].push(item);
+        });
+        Object.keys(years).sort().forEach(year => {
+          const roomBox = document.createElement('div');
+          roomBox.className = 'room-box';
+          roomBox.setAttribute('onclick', `openYearModal('${year}')`);
+          roomBox.innerHTML = `<div class="room-header">📁 ${esc(year)}년</div><div class="room-body">일지 ${years[year].length}개</div>`;
+          container.appendChild(roomBox);
+        });
+      };
+    }
+
+    function openYearModal(year) {
+      currentActiveYear = year;
+      document.getElementById('yearModalTitle').innerText = `${year}년 월별 선택`;
+      const monthContainer = document.getElementById('monthRoomsContainer');
+      monthContainer.innerHTML = '';
+      const tx = db.transaction('activities', 'readonly');
+      const store = tx.objectStore('activities');
+      store.getAll().onsuccess = function(e) {
+        const activitiesData = e.target.result;
+        const monthsInYear = {};
+        activitiesData.filter(item => String(item.year).trim() === String(year).trim()).forEach(item => {
+          const mm = String(item.month).trim();
+          if (!monthsInYear[mm]) monthsInYear[mm] = [];
+          monthsInYear[mm].push(item);
+        });
+        Object.keys(monthsInYear).sort().forEach(month => {
+          const monthBox = document.createElement('div');
+          monthBox.className = 'room-box';
+          monthBox.style.borderColor = '#3498db';
+          monthBox.setAttribute('onclick', `openMonthModal('${year}', '${month}')`);
+          monthBox.innerHTML = `<div class="room-header" style="background:#3498db;">📂 ${esc(month)}월</div><div class="room-body">자료 ${monthsInYear[month].length}개</div>`;
+          monthContainer.appendChild(monthBox);
+        });
+        document.getElementById('yearModal').style.display = 'flex';
+      };
+    }
+
+    function closeYearModal() { document.getElementById('yearModal').style.display = 'none'; }
+
+    function openMonthModal(year, month) {
+      currentActiveYear = year;
+      currentActiveMonth = month;
+      document.getElementById('monthModalTitle').innerText = `${year}년 ${month}월 자료 목록`;
+      const tbody = document.getElementById('monthFilesTableBody');
+      tbody.innerHTML = '';
+      const tx = db.transaction('activities', 'readonly');
+      const store = tx.objectStore('activities');
+      store.getAll().onsuccess = function(e) {
+        const filtered = e.target.result.filter(item => String(item.year).trim() === String(year).trim() && String(item.month).trim() === String(month).trim());
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" style="color:#666;">등록된 자료가 없습니다.</td></tr>`;
+        } else {
+          filtered.forEach(item => {
+            tbody.innerHTML += `<tr><td>${esc(item.date)}</td><td><b>${esc(item.title)}</b></td><td><button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewStoredFile(${item.id})">🔍 바로보기</button> <button class="action-btn danger-btn" style="padding:4px 8px; font-size:11px;" onclick="deleteStoredFile(${item.id})">🗑️ 삭제</button></td></tr>`;
+          });
+        }
+        document.getElementById('yearModal').style.display = 'none';
+        document.getElementById('monthModal').style.display = 'flex';
+      };
+    }
+
+    function viewStoredFile(id) {
+      const tx = db.transaction('activities', 'readonly');
+      tx.objectStore('activities').get(id).onsuccess = function(e) {
+        const record = e.target.result;
+        if (record && record.fileBlob) openBlob(record.fileBlob);
+        else alert('파일을 찾을 수 없습니다.');
+      };
+    }
+
+    function deleteStoredFile(id) {
+      if (!confirm('이 활동일지와 파일을 정말 삭제하시겠습니까?')) return;
+      const tx = db.transaction('activities', 'readwrite');
+      tx.objectStore('activities').delete(id);
+      tx.oncomplete = function() {
+        alert('삭제되었습니다.');
+        openMonthModal(currentActiveYear, currentActiveMonth);
+        renderActivityYearRooms();
+      };
+    }
+
+    function closeMonthModal() {
+      document.getElementById('monthModal').style.display = 'none';
+      if (currentActiveYear) openYearModal(currentActiveYear);
+    }
+
+    function addAssetCategory() {
+      const nameInput = document.getElementById('newCategoryName');
+      const catName = nameInput.value.trim();
+      if (!catName) { alert('분류 이름을 입력하세요!'); return; }
+      const tx = db.transaction('assets', 'readwrite');
+      const store = tx.objectStore('assets');
+      store.getAll().onsuccess = function(e) {
+        const exists = e.target.result.some(item => item.category === catName);
+        if (exists) { alert('이미 존재하는 분류입니다.'); return; }
+        store.add({ category: catName, name: '', qty: '', place: '', status: '사용가능', note: '', imageBlob: null });
+        nameInput.value = '';
+        renderAssetCategories();
+      };
+    }
+
+    function renderAssetCategories() {
+      if (!db) return;
+      const tx = db.transaction('assets', 'readonly');
+      const store = tx.objectStore('assets');
+      store.getAll().onsuccess = function(e) {
+        const assetsData = e.target.result;
+        const container = document.getElementById('assetCategoryContainer');
+        container.innerHTML = '';
+        const defaultCats = ['소모품', '보드게임'];
+        const catsSet = new Set(defaultCats);
+        assetsData.forEach(item => { if (item.category) catsSet.add(item.category); });
+        [...catsSet].forEach(cat => {
+          const count = assetsData.filter(item => item.category === cat && item.name).length;
+          const roomBox = document.createElement('div');
+          roomBox.className = 'room-box';
+          roomBox.setAttribute('onclick', `openAssetCategoryModal('${esc(cat)}')`);
+          roomBox.innerHTML = `<div class="room-header" style="background:#e67e22;">📦 ${esc(cat)}</div><div class="room-body">품목 ${count}개</div>`;
+          roomBox.onclick = () => openAssetCategoryModal(cat);
+          container.appendChild(roomBox);
+        });
+      };
+    }
+
+    function openAssetCategoryModal(catName) {
+      currentActiveAssetCat = catName;
+      document.getElementById('assetCategoryModalTitle').innerText = `${catName} 관리`;
+      document.getElementById('assetNameInput').value = '';
+      document.getElementById('assetQtyInput').value = '';
+      document.getElementById('assetPlaceInput').value = '';
+      document.getElementById('assetStatusInput').value = '사용가능';
+      document.getElementById('assetNoteInput').value = '';
+      document.getElementById('assetImageInput').value = '';
+      const tx = db.transaction('assets', 'readonly');
+      tx.objectStore('assets').getAll().onsuccess = function(e) {
+        const assetsData = e.target.result;
+        const tbody = document.getElementById('assetItemsTableBody');
+        tbody.innerHTML = '';
+        const filtered = assetsData.filter(item => item.category === catName && item.name);
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="color:#666;">등록된 품목이 없습니다.</td></tr>`;
+        } else {
+          filtered.forEach(item => {
+            const imgTag = item.imageBlob ? `<img src="${makeUrl(item.imageBlob)}" class="asset-thumb" onclick="viewAssetImage(${item.id})">` : `<span style="font-size:11px; color:#999;">사진없음</span>`;
+            tbody.innerHTML += `<tr>
+              <td>${imgTag}</td>
+              <td><input type="text" id="edit_name_${item.id}" value="${esc(item.name)}"></td>
+              <td><input type="text" id="edit_qty_${item.id}" value="${esc(item.qty)}"></td>
+              <td><input type="text" id="edit_place_${item.id}" value="${esc(item.place)}"></td>
+              <td>
+                <select id="edit_status_${item.id}">
+                  <option value="사용가능" ${item.status === '사용가능' ? 'selected' : ''}>사용가능</option>
+                  <option value="대여중" ${item.status === '대여중' ? 'selected' : ''}>대여중</option>
+                  <option value="수리중" ${item.status === '수리중' ? 'selected' : ''}>수리중</option>
+                  <option value="폐기예정" ${item.status === '폐기예정' ? 'selected' : ''}>폐기예정</option>
+                </select>
+              </td>
+              <td><input type="text" id="edit_note_${item.id}" value="${esc(item.note)}"></td>
+              <td><button class="action-btn success-btn" style="padding:4px 8px; font-size:11px;" onclick="updateAssetItem(${item.id})">수정</button> <button class="action-btn danger-btn" style="padding:4px 8px; font-size:11px;" onclick="deleteAssetItem(${item.id})">삭제</button></td>
+            </tr>`;
+          });
+        }
+        document.getElementById('assetCategoryModal').style.display = 'flex';
+      };
+    }
+
+    function viewAssetImage(id) {
+      const tx = db.transaction('assets', 'readonly');
+      tx.objectStore('assets').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (item && item.imageBlob) openBlob(item.imageBlob);
+      };
+    }
+
+    function addAssetItem() {
+      const name = document.getElementById('assetNameInput').value.trim();
+      const qty = document.getElementById('assetQtyInput').value.trim();
+      const place = document.getElementById('assetPlaceInput').value.trim();
+      const status = document.getElementById('assetStatusInput').value;
+      const note = document.getElementById('assetNoteInput').value.trim();
+      const fileInput = document.getElementById('assetImageInput');
+      if (!name) { alert('품목명을 입력하세요!'); return; }
+      const imageBlob = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      const tx = db.transaction('assets', 'readwrite');
+      tx.objectStore('assets').add({ category: currentActiveAssetCat, name, qty, place, status, note, imageBlob });
+      tx.oncomplete = function() {
+        alert('품목이 등록되었습니다.');
+        openAssetCategoryModal(currentActiveAssetCat);
+        renderAssetCategories();
+      };
+    }
+
+    function updateAssetItem(id) {
+      const tx = db.transaction('assets', 'readwrite');
+      const store = tx.objectStore('assets');
+      store.get(id).onsuccess = function(e) {
+        const record = e.target.result;
+        if (!record) return;
+        record.name = document.getElementById(`edit_name_${id}`).value.trim();
+        record.qty = document.getElementById(`edit_qty_${id}`).value.trim();
+        record.place = document.getElementById(`edit_place_${id}`).value.trim();
+        record.status = document.getElementById(`edit_status_${id}`).value;
+        record.note = document.getElementById(`edit_note_${id}`).value.trim();
+        store.put(record);
+        alert('수정되었습니다.');
+        openAssetCategoryModal(currentActiveAssetCat);
+        renderAssetCategories();
+      };
+    }
+
+    function deleteAssetItem(id) {
+      if (!confirm('이 품목을 삭제하시겠습니까?')) return;
+      const tx = db.transaction('assets', 'readwrite');
+      tx.objectStore('assets').delete(id);
+      tx.oncomplete = function() {
+        openAssetCategoryModal(currentActiveAssetCat);
+        renderAssetCategories();
+      };
+    }
+
+    function deleteCurrentAssetCategory() {
+      if (!confirm(`'${currentActiveAssetCat}' 분류와 안에 속한 모든 품목을 삭제하시겠습니까?`)) return;
+      const tx = db.transaction('assets', 'readwrite');
+      const store = tx.objectStore('assets');
+      store.getAll().onsuccess = function(e) {
+        e.target.result.forEach(item => {
+          if (item.category === currentActiveAssetCat) store.delete(item.id);
+        });
+      };
+      tx.oncomplete = function() {
+        alert('분류가 삭제되었습니다.');
+        closeAssetCategoryModal();
+        renderAssetCategories();
+      };
+    }
+
+    function closeAssetCategoryModal() { document.getElementById('assetCategoryModal').style.display = 'none'; }
+
+    function saveRentalData() {
+      localStorage.setItem('rentalData', JSON.stringify(rentalData));
+    }
+
+    function renderRentalRoom() {
+      rentalRoomPassword = localStorage.getItem('rentalRoomPassword') || '';
+      document.getElementById('rentalPasswordSetupBox').style.display = rentalRoomPassword ? 'none' : 'block';
+      document.getElementById('rentalPasswordLoginBox').style.display = rentalRoomPassword && !isRentalAuthenticated ? 'block' : 'none';
+      document.getElementById('rentalManagerBox').style.display = isRentalAuthenticated ? 'block' : 'none';
+      if (document.getElementById('rentalDate') && !document.getElementById('rentalDate').value) {
+        document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
+      }
+      renderRentalRows();
+    }
+
+    function setRentalPassword() {
+      const pw = document.getElementById('newRentalPassword').value.trim();
+      if (!pw) { alert('대여방 비밀번호를 입력하세요.'); return; }
+      localStorage.setItem('rentalRoomPassword', pw);
+      rentalRoomPassword = pw;
+      document.getElementById('newRentalPassword').value = '';
+      alert('대여방 비밀번호가 설정되었습니다.');
+      renderRentalRoom();
+    }
+
+    function loginRentalRoom() {
+      const inputPw = document.getElementById('rentalLoginPassword').value.trim();
+      rentalRoomPassword = localStorage.getItem('rentalRoomPassword') || '';
+      if (inputPw === rentalRoomPassword) {
+        isRentalAuthenticated = true;
+        document.getElementById('rentalLoginPassword').value = '';
+        renderRentalRoom();
+      } else {
+        alert('대여방 비밀번호가 일치하지 않습니다.');
+      }
+    }
+
+    function logoutRentalRoom() {
+      isRentalAuthenticated = false;
+      renderRentalRoom();
+    }
+
+    function changeRentalPassword() {
+      if (!isRentalAuthenticated) { alert('먼저 대여 담당자 로그인을 하세요.'); return; }
+      const newPw = prompt('새 대여방 비밀번호를 입력하세요.');
+      if (!newPw || !newPw.trim()) return;
+      localStorage.setItem('rentalRoomPassword', newPw.trim());
+      rentalRoomPassword = newPw.trim();
+      alert('대여방 비밀번호가 변경되었습니다.');
+      renderRentalRoom();
+    }
+
+    async function addRentalEntry() {
+      const item = document.getElementById('rentalItem').value.trim();
+      const borrower = document.getElementById('rentalBorrower').value.trim();
+      const rentDate = document.getElementById('rentalDate').value;
+      const note = document.getElementById('rentalNote').value.trim();
+      if (!item) { alert('품목명을 입력하세요.'); return; }
+      const newRow = { item, borrower, rentDate, returnDate: '', feeStatus: '', note };
+
+      try {
+        const client = supabaseClient || await ensureSupabaseReady(10000);
+        if (client) {
+          const payload = {
+            item: newRow.item, borrower: newRow.borrower,
+            rent_date: newRow.rentDate || null,
+            return_date: null, fee_status: '', note: newRow.note
+          };
+          const { data, error } = await client.from('rentals').insert(payload).select('*').single();
+          if (error) throw error;
+          newRow.id = data.id;
+          rentalData.push(newRow);
+          cacheRentalsLocally();
+          renderRentalRows();
+        } else {
+          rentalData.push(newRow);
+          saveRentalData();
+          rentalQueuePending(newRow);
+          renderRentalRows();
+        }
+      } catch (err) {
+        // 실패해도 로컬에는 남긴 뒤 다음 동기화 때 재시도 큐에 보관
+        rentalData.push(newRow);
+        cacheRentalsLocally();
+        rentalQueuePending(newRow);
+        renderRentalRows();
+        console.error('Rental insert failed:', err);
+      }
+
+      document.getElementById('rentalItem').value = '';
+      document.getElementById('rentalBorrower').value = '';
+      document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('rentalNote').value = '';
+    }
+
+    function addRentalRow() {
+      addRentalEntry();
+    }
+
+    async function saveRentalRow(index) {
+      const idx = Number(index);
+      const itemInput = document.getElementById(`rentalItem_${idx}`);
+      const borrowerInput = document.getElementById(`rentalBorrower_${idx}`);
+      const rentDateInput = document.getElementById(`rentalRentDate_${idx}`);
+      const returnDateInput = document.getElementById(`rentalReturnDate_${idx}`);
+      const feeStatusInput = document.getElementById(`rentalFeeStatus_${idx}`);
+      const noteInput = document.getElementById(`rentalNote_${idx}`);
+      const updatedRow = {
+        ...(rentalData[idx] || {}),
+        item: itemInput.value.trim(),
+        borrower: borrowerInput.value.trim(),
+        rentDate: rentDateInput.value,
+        note: noteInput.value.trim()
+      };
+      if (isRentalAuthenticated) {
+        updatedRow.returnDate = returnDateInput.value;
+        updatedRow.feeStatus = feeStatusInput.value;
+      }
+      try {
+        const client = supabaseClient || await ensureSupabaseReady(10000);
+        if (client) {
+          if (rentalHasStableId(rentalData[idx])) {
+            const payload = {
+              item: updatedRow.item, borrower: updatedRow.borrower,
+              rent_date: updatedRow.rentDate || null,
+              return_date: updatedRow.returnDate || null,
+              fee_status: updatedRow.feeStatus || '',
+              note: updatedRow.note || ''
+            };
+            const { error } = await client.from('rentals')
+              .update(payload).eq('id', rentalData[idx].id);
+            if (error) throw error;
+            updatedRow.id = rentalData[idx].id;
+          } else {
+            // 클라우드 미동기화된 로컬 행: insert 시도, 실패하면 큐에 보관
+            const payload = {
+              item: updatedRow.item, borrower: updatedRow.borrower,
+              rent_date: updatedRow.rentDate || null,
+              return_date: updatedRow.returnDate || null,
+              fee_status: updatedRow.feeStatus || '',
+              note: updatedRow.note || ''
+            };
+            const { data, error } = await client.from('rentals').insert(payload).select('id').single();
+            if (error) throw error;
+            updatedRow.id = data.id;
+          }
+        }
+        rentalData[idx] = updatedRow;
+        cacheRentalsLocally();
+        renderRentalRows();
+        alert('대여 기록이 저장되었습니다.');
+      } catch (err) {
+        // 클라우드 실패해도 로컬은 갱신, 다음 동기화 시 재시도
+        rentalData[idx] = updatedRow;
+        cacheRentalsLocally();
+        renderRentalRows();
+        console.error('Rental save failed:', err);
+        alert('대여 기록 저장 중 오류: ' + (err && err.message ? err.message : err));
+      }
+    }
+
+    async function deleteRentalRow(index) {
+      if (!isRentalAuthenticated) {
+        alert('삭제는 대여 담당자만 할 수 있습니다.');
+        return;
+      }
+      if (!confirm('이 대여 기록을 삭제하시겠습니까?')) return;
+      const idx = Number(index);
+      const target = rentalData[idx];
+      const pullLocal = () => {
+        rentalData.splice(idx, 1);
+        cacheRentalsLocally();
+        renderRentalRows();
+      };
+      try {
+        const client = supabaseClient || await ensureSupabaseReady(10000);
+        if (client) {
+          let q = client.from('rentals').delete();
+          if (rentalHasStableId(target)) {
+            q = q.eq('id', target.id);
+          } else {
+            // id 없는 로컬 행: 내용 매칭으로 시도
+            if (target.item) q = q.eq('item', target.item);
+            if (target.borrower) q = q.eq('borrower', target.borrower);
+            if (target.rentDate) q = q.eq('rent_date', target.rentDate);
+          }
+          const { error } = await q;
+          if (error) throw error;
+          pullLocal();
+          await loadRentalsFromSupabase(false).catch(() => {});
+        } else {
+          pullLocal();
+        }
+      } catch (err) {
+        console.error('Rental delete failed:', err);
+        alert('대여 기록 삭제 중 오류: ' + (err && err.message ? err.message : err));
+      }
+    }
+
+    function renderRentalRows() {
+      const tbody = document.getElementById('rentalTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!Array.isArray(rentalData) || rentalData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color:#666;">등록된 대여 기록이 없습니다.</td></tr>';
+        return;
+      }
+      rentalData.forEach((row, index) => {
+        const protectedAttr = isRentalAuthenticated ? '' : 'readonly disabled';
+        const feeValue = row.feeStatus || '';
+        const option1 = feeValue === '납입완료' ? 'selected' : '';
+        const option2 = feeValue === '미완납' ? 'selected' : '';
+        const option3 = feeValue === '면제/해당없음' ? 'selected' : '';
+        tbody.innerHTML += `
+          <tr>
+            <td><input type="text" id="rentalItem_${index}" value="${esc(row.item || '')}"></td>
+            <td><input type="text" id="rentalBorrower_${index}" value="${esc(row.borrower || '')}"></td>
+            <td><input type="date" id="rentalRentDate_${index}" value="${esc(row.rentDate || '')}"></td>
+            <td><input type="date" id="rentalReturnDate_${index}" value="${esc(row.returnDate || '')}" ${protectedAttr}></td>
+            <td>
+              <select id="rentalFeeStatus_${index}" ${protectedAttr}>
+                <option value="" ${feeValue === '' ? 'selected' : ''}>선택</option>
+                <option value="납입완료" ${option1}>납입완료</option>
+                <option value="미완납" ${option2}>미완납</option>
+                <option value="면제/해당없음" ${option3}>면제/해당없음</option>
+              </select>
+            </td>
+            <td><input type="text" id="rentalNote_${index}" value="${esc(row.note || '')}"></td>
+            <td>
+              <button class="action-btn success-btn" style="padding:4px 8px; font-size:11px;" onclick="saveRentalRow(${index})">저장</button>
+              <button class="action-btn danger-btn" style="padding:4px 8px; font-size:11px;" onclick="deleteRentalRow(${index})">삭제</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    function getAllFromStore(storeName, cb) {
+      const tx = db.transaction(storeName, 'readonly');
+      tx.objectStore(storeName).getAll().onsuccess = function(e) { cb(e.target.result || []); };
+    }
+
+    function addIdeaRoom() {
+      const name = document.getElementById('ideaRoomName').value.trim();
+      const color = document.getElementById('ideaRoomColor').value || '#2980b9';
+      if (!name) { alert('방 이름을 입력하세요.'); return; }
+      getAllFromStore('ideaRooms', (rooms) => {
+        if (rooms.some(r => r.name === name)) { alert('이미 있는 방 이름입니다.'); return; }
+        const tx = db.transaction('ideaRooms', 'readwrite');
+        tx.objectStore('ideaRooms').add({ name, color });
+        tx.oncomplete = function() {
+          document.getElementById('ideaRoomName').value = '';
+          document.getElementById('ideaRoomColor').value = '#2980b9';
+          renderIdeaRooms();
+        };
+      });
+    }
+
+    function renderIdeaRooms() {
+      if (!db) return;
+      getAllFromStore('ideaRooms', (rooms) => {
+        const container = document.getElementById('ideaRoomContainer');
+        container.innerHTML = '';
+        if (rooms.length === 0) {
+          container.innerHTML = '<div class="small-guide">아직 만들어진 아이디어 방이 없습니다.</div>';
+          return;
+        }
+        rooms.forEach(room => {
+          const box = document.createElement('div');
+          box.className = 'room-box simple-room-box';
+          box.innerHTML = `<div class="room-header" style="background:${esc(room.color || '#2980b9')};">${esc(room.name)}</div>`;
+          box.onclick = () => openIdeaRoom(room.id);
+          container.appendChild(box);
+        });
+      });
+    }
+
+    function openIdeaRoom(id) {
+      currentIdeaRoomId = id;
+      const tx = db.transaction('ideaRooms', 'readonly');
+      tx.objectStore('ideaRooms').get(id).onsuccess = function(e) {
+        const room = e.target.result;
+        if (!room) return;
+        currentIdeaRoomName = room.name || '';
+        document.getElementById('ideaRoomDetail').style.display = 'block';
+        document.getElementById('ideaRoomDetailTitle').innerText = currentIdeaRoomName;
+        document.getElementById('ideaRoomEditColor').value = room.color || '#2980b9';
+        resetIdeaPostForm();
+        closeIdeaMediaPreview();
+        renderIdeaPosts(id);
+      };
+    }
+
+    function saveCurrentIdeaRoomColor() {
+      if (!currentIdeaRoomId) return;
+      const color = document.getElementById('ideaRoomEditColor').value || '#2980b9';
+      const tx = db.transaction('ideaRooms', 'readwrite');
+      const store = tx.objectStore('ideaRooms');
+      store.get(currentIdeaRoomId).onsuccess = function(e) {
+        const room = e.target.result;
+        if (!room) return;
+        room.color = color;
+        store.put(room);
+      };
+      tx.oncomplete = function() {
+        renderIdeaRooms();
+      };
+    }
+
+    function renameCurrentIdeaRoom() {
+      if (!currentIdeaRoomId) return;
+      const newName = prompt('새 방 이름을 입력하세요.', currentIdeaRoomName || '');
+      if (!newName || !newName.trim()) return;
+      const tx = db.transaction('ideaRooms', 'readwrite');
+      const store = tx.objectStore('ideaRooms');
+      store.get(currentIdeaRoomId).onsuccess = function(e) {
+        const room = e.target.result;
+        if (!room) return;
+        room.name = newName.trim();
+        store.put(room);
+      };
+      tx.oncomplete = function() {
+        currentIdeaRoomName = newName.trim();
+        document.getElementById('ideaRoomDetailTitle').innerText = currentIdeaRoomName;
+        renderIdeaRooms();
+      };
+    }
+
+    function deleteCurrentIdeaRoom() {
+      if (!currentIdeaRoomId) return;
+      if (!confirm('이 아이디어 방과 안의 자료를 모두 삭제하시겠습니까?')) return;
+      const roomId = currentIdeaRoomId;
+      const tx = db.transaction(['ideaRooms', 'ideaPosts'], 'readwrite');
+      tx.objectStore('ideaRooms').delete(roomId);
+      tx.objectStore('ideaPosts').getAll().onsuccess = function(e) {
+        e.target.result.filter(p => p.roomId === roomId).forEach(p => tx.objectStore('ideaPosts').delete(p.id));
+      };
+      tx.oncomplete = function() {
+        currentIdeaRoomId = null;
+        currentIdeaRoomName = '';
+        document.getElementById('ideaRoomDetail').style.display = 'none';
+        closeIdeaMediaPreview();
+        renderIdeaRooms();
+      };
+    }
+
+    function closeIdeaMediaPreview() {
+      document.getElementById('ideaMediaPreviewBox').style.display = 'none';
+      document.getElementById('ideaMediaPreviewContent').innerHTML = '';
+    }
+
+    function resetIdeaPostForm() {
+      document.getElementById('ideaPostEditId').value = '';
+      document.getElementById('ideaPostTitle').value = '';
+      document.getElementById('ideaPostText').value = '';
+      document.getElementById('ideaPostAuthor').value = '';
+      document.getElementById('ideaPostLink').value = '';
+      document.getElementById('ideaPostFile').value = '';
+    }
+
+    function saveIdeaPost() {
+      if (!currentIdeaRoomId) { alert('먼저 아이디어 방을 선택하세요.'); return; }
+      const editId = document.getElementById('ideaPostEditId').value;
+      const title = document.getElementById('ideaPostTitle').value.trim();
+      const text = document.getElementById('ideaPostText').value.trim();
+      const author = document.getElementById('ideaPostAuthor').value.trim();
+      const link = document.getElementById('ideaPostLink').value.trim();
+      const fileInput = document.getElementById('ideaPostFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      if (!title) { alert('자료 제목을 입력하세요.'); return; }
+
+      const tx = db.transaction('ideaPosts', 'readwrite');
+      const store = tx.objectStore('ideaPosts');
+      if (!editId) {
+        store.add({ roomId: currentIdeaRoomId, title, text, author, link, fileName: newFile ? newFile.name : '', fileBlob: newFile || null, createdAt: getNowStamp(), modifiedAt: getNowStamp(), date: new Date().toLocaleDateString() });
+      } else {
+        store.get(Number(editId)).onsuccess = function(e) {
+          const record = e.target.result;
+          if (!record) return;
+          record.title = title;
+          record.text = text;
+          record.author = author;
+          record.link = link;
+          record.date = new Date().toLocaleDateString();
+          record.modifiedAt = getNowStamp();
+          if (newFile) {
+            record.fileName = newFile.name;
+            record.fileBlob = newFile;
+          }
+          store.put(record);
+        };
+      }
+      tx.oncomplete = function() {
+        resetIdeaPostForm();
+        renderIdeaPosts(currentIdeaRoomId);
+      };
+    }
+
+    function renderIdeaPosts(roomId) {
+      getAllFromStore('ideaPosts', (posts) => {
+        const tbody = document.getElementById('ideaPostTableBody');
+        const query = (document.getElementById('ideaSearchInput')?.value || '').trim().toLowerCase();
+        const filtered = posts.filter(p => p.roomId === roomId).filter(p => { const text = `${p.title || ''} ${p.text || ''} ${p.author || ''} ${p.link || ''}`.toLowerCase(); return !query || text.includes(query); });
+        tbody.innerHTML = '';
+        if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="color:#666;">등록된 자료가 없습니다.</td></tr>';
+          return;
+        }
+        filtered.forEach(item => {
+          let filePart = '<span style="font-size:11px; color:#999;">없음</span>';
+          if (item.fileBlob) {
+            const kind = detectFileKind(item.fileName, item.fileBlob.type);
+            if (kind === 'video') filePart = `<button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="previewIdeaPostMedia(${item.id})">동영상재생</button>`;
+            else if (kind === 'image') filePart = `<button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="previewIdeaPostMedia(${item.id})">이미지보기</button>`;
+            else if (kind === 'pdf') filePart = `<button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="previewIdeaPostMedia(${item.id})">PDF보기</button>`;
+            else filePart = `<button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewIdeaPostFile(${item.id})">파일보기</button>`;
+          }
+          const linkPart = item.link ? `<a href="${esc(item.link)}" target="_blank">바로가기</a>` : '<span style="font-size:11px; color:#999;">없음</span>';
+          tbody.innerHTML += `<tr>
+            <td>${esc(item.title)}</td>
+            <td style="text-align:left;">${esc(shortText(item.text, 60))}</td>
+            <td>${filePart}</td>
+            <td>${linkPart}</td>
+            <td>${esc(item.author || '')}</td>
+            <td>${esc(item.createdAt || item.date || '')}</td>
+            <td>${esc(item.modifiedAt || item.createdAt || item.date || '')}</td>
+            <td><button class="action-btn success-btn" style="padding:4px 8px; font-size:11px;" onclick="editIdeaPost(${item.id})">수정</button> <button class="action-btn danger-btn" style="padding:4px 8px; font-size:11px;" onclick="deleteIdeaPost(${item.id})">삭제</button></td>
+          </tr>`;
+        });
+      });
+    }
+
+    function previewIdeaPostMedia(id) {
+      const tx = db.transaction('ideaPosts', 'readonly');
+      tx.objectStore('ideaPosts').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item || !item.fileBlob) return;
+        document.getElementById('ideaMediaPreviewBox').style.display = 'block';
+        document.getElementById('ideaMediaPreviewContent').innerHTML = `<div style="margin-bottom:8px;"><span class="file-tag">${esc(item.fileName || item.title || '첨부파일')}</span></div>${buildInlinePreview(item.fileBlob, item.fileName)}`;
+      };
+    }
+
+    function editIdeaPost(id) {
+      const tx = db.transaction('ideaPosts', 'readonly');
+      tx.objectStore('ideaPosts').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        document.getElementById('ideaPostEditId').value = item.id;
+        document.getElementById('ideaPostTitle').value = item.title || '';
+        document.getElementById('ideaPostText').value = item.text || '';
+        document.getElementById('ideaPostAuthor').value = item.author || '';
+        document.getElementById('ideaPostLink').value = item.link || '';
+        document.getElementById('ideaPostFile').value = '';
+      };
+    }
+
+    function deleteIdeaPost(id) {
+      if (!confirm('이 자료를 삭제하시겠습니까?')) return;
+      const tx = db.transaction('ideaPosts', 'readwrite');
+      tx.objectStore('ideaPosts').delete(id);
+      tx.oncomplete = function() { renderIdeaPosts(currentIdeaRoomId); resetIdeaPostForm(); closeIdeaMediaPreview(); };
+    }
+
+    function viewIdeaPostFile(id) {
+      const tx = db.transaction('ideaPosts', 'readonly');
+      tx.objectStore('ideaPosts').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (item && item.fileBlob) openBlob(item.fileBlob);
+      };
+    }
+
+    function openMemberRoom(roomId) {
+      document.querySelectorAll('.member-room-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(roomId).classList.add('active');
+      if (roomId === 'adminRoom') renderAdminRoom();
+      if (roomId === 'bylawsRoom') renderBylawRooms();
+    }
+
+    function saveMember() {
+      const editIndex = document.getElementById('memberEditIndex').value;
+      const name = document.getElementById('memberName').value.trim();
+      const userId = document.getElementById('memberUserId').value.trim();
+      const phone = document.getElementById('memberPhone').value.trim();
+      const email = document.getElementById('memberEmail').value.trim();
+      if (!name) { alert('이름을 입력하세요.'); return; }
+      const member = { name, userId, phone, email };
+      if (editIndex === '') memberListData.push(member);
+      else memberListData[Number(editIndex)] = member;
+      localStorage.setItem('memberListData', JSON.stringify(memberListData));
+      resetMemberForm();
+      renderMembers();
+    }
+
+    function editMember(index) {
+      const item = memberListData[index];
+      document.getElementById('memberEditIndex').value = index;
+      document.getElementById('memberName').value = item.name || '';
+      document.getElementById('memberUserId').value = item.userId || '';
+      document.getElementById('memberPhone').value = item.phone || '';
+      document.getElementById('memberEmail').value = item.email || '';
+    }
+
+    function deleteMember(index) {
+      if (!confirm('이 회원 정보를 삭제하시겠습니까?')) return;
+      memberListData.splice(index, 1);
+      localStorage.setItem('memberListData', JSON.stringify(memberListData));
+      renderMembers();
+      resetMemberForm();
+    }
+
+    function resetMemberForm() {
+      document.getElementById('memberEditIndex').value = '';
+      document.getElementById('memberName').value = '';
+      document.getElementById('memberUserId').value = '';
+      document.getElementById('memberPhone').value = '';
+      document.getElementById('memberEmail').value = '';
+    }
+
+    function normalizePhoneForTel(phone) {
+      return String(phone || '').replace(/[^0-9+]/g, '');
+    }
+
+    function renderMembers() {
+      const table = document.getElementById('memberTable');
+      const query = (document.getElementById('memberSearchInput')?.value || '').trim().toLowerCase();
+      table.innerHTML = `<tr><th>이름</th><th>아이디</th><th>전화번호</th><th>이메일</th><th>관리</th></tr>`;
+      const filtered = memberListData.filter(item => {
+        const text = `${item.name || ''} ${item.userId || ''} ${item.phone || ''} ${item.email || ''}`.toLowerCase();
+        return !query || text.includes(query);
+      });
+      filtered.forEach((item) => {
+        const index = memberListData.indexOf(item);
+        const telHref = normalizePhoneForTel(item.phone || '');
+        const phonePart = item.phone ? `<a href="tel:${esc(telHref)}" style="color:#2980b9; font-weight:bold; text-decoration:underline;">${esc(item.phone)}</a>` : '';
+        const emailPart = item.email ? `<div style="display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap;"><a href="https://mail.naver.com/" target="_blank" style="color:#27ae60; text-decoration:underline;">${esc(item.email)}</a><a href="mailto:${esc(item.email)}" class="action-btn" style="display:inline-block; padding:4px 8px; font-size:11px; text-decoration:none; margin:0;">메일쓰기</a></div>` : '';
+        table.innerHTML += `<tr><td>${esc(item.name)}</td><td>${esc(item.userId)}</td><td>${phonePart || '<span style="color:#999;">없음</span>'}</td><td>${emailPart || '<span style="color:#999;">없음</span>'}</td><td><button class="action-btn success-btn" style="padding:4px 8px; font-size:11px;" onclick="editMember(${index})">수정</button> <button class="action-btn danger-btn" style="padding:4px 8px; font-size:11px;" onclick="deleteMember(${index})">삭제</button></td></tr>`;
+      });
+      if (filtered.length === 0) table.innerHTML += `<tr><td colspan="5" style="color:#666;">검색 결과가 없습니다.</td></tr>`;
+    }
+
+    function saveMeetingDoc(docType) {
+      const prefix = docType === 'rules' ? 'rules' : 'bylaws';
+      const editId = document.getElementById(`${prefix}EditId`).value;
+      const title = document.getElementById(`${prefix}Title`).value.trim();
+      const text = document.getElementById(`${prefix}Text`).value.trim();
+      const fileInput = document.getElementById(`${prefix}File`);
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      if (!title && !text && !newFile) { alert('제목, 내용, 파일 중 하나는 입력하세요.'); return; }
+      const tx = db.transaction('meetingDocs', 'readwrite');
+      const store = tx.objectStore('meetingDocs');
+      if (!editId) {
+        store.add({ docType, title: title || '(제목없음)', text, fileName: newFile ? newFile.name : '', fileBlob: newFile || null, date: new Date().toLocaleDateString() });
+      } else {
+        store.get(Number(editId)).onsuccess = function(e) {
+          const record = e.target.result;
+          if (!record) return;
+          record.title = title || '(제목없음)';
+          record.text = text;
+          record.date = new Date().toLocaleDateString();
+          if (newFile) {
+            record.fileName = newFile.name;
+            record.fileBlob = newFile;
+          }
+          store.put(record);
+        };
+      }
+      tx.oncomplete = function() {
+        resetMeetingDocForm(docType);
+        renderMeetingDocs(docType);
+        alert('저장되었습니다.');
+      };
+    }
+
+    function renderMeetingDocs(docType) {
+      const tbody = document.getElementById(docType === 'rules' ? 'rulesTableBody' : 'bylawsTableBody');
+      tbody.innerHTML = '';
+      getAllFromStore('meetingDocs', (docs) => {
+        const filtered = docs.filter(item => item.docType === docType);
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="color:#666;">등록된 내용이 없습니다.</td></tr>`;
+          return;
+        }
+        filtered.forEach(item => {
+          const filePart = item.fileBlob ? `<button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewMeetingDocFile(${item.id})">파일보기</button>` : `<span style="font-size:11px; color:#999;">없음</span>`;
+          tbody.innerHTML += `<tr><td>${esc(item.title)}</td><td style="text-align:left;">${esc(shortText(item.text, 50))}</td><td>${filePart}</td><td>${esc(item.date)}</td><td><button class="action-btn success-btn" style="padding:4px 8px; font-size:11px;" onclick="editMeetingDoc(${item.id})">수정</button> <button class="action-btn danger-btn" style="padding:4px 8px; font-size:11px;" onclick="deleteMeetingDoc(${item.id}, '${docType}')">삭제</button></td></tr>`;
+        });
+      });
+    }
+
+    function editMeetingDoc(id) {
+      const tx = db.transaction('meetingDocs', 'readonly');
+      tx.objectStore('meetingDocs').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        const prefix = item.docType === 'rules' ? 'rules' : 'bylaws';
+        openMemberRoom(prefix === 'rules' ? 'rulesRoom' : 'bylawsRoom');
+        document.getElementById(`${prefix}EditId`).value = item.id;
+        document.getElementById(`${prefix}Title`).value = item.title || '';
+        document.getElementById(`${prefix}Text`).value = item.text || '';
+        document.getElementById(`${prefix}File`).value = '';
+      };
+    }
+
+    function deleteMeetingDoc(id, docType) {
+      if (!confirm('이 항목을 삭제하시겠습니까?')) return;
+      const tx = db.transaction('meetingDocs', 'readwrite');
+      tx.objectStore('meetingDocs').delete(id);
+      tx.oncomplete = function() {
+        renderMeetingDocs(docType);
+        resetMeetingDocForm(docType);
+      };
+    }
+
+    function viewMeetingDocFile(id) {
+      const tx = db.transaction('meetingDocs', 'readonly');
+      tx.objectStore('meetingDocs').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (item && item.fileBlob) openBlob(item.fileBlob);
+        else alert('파일이 없습니다.');
+      };
+    }
+
+    function resetMeetingDocForm(docType) {
+      const prefix = docType === 'rules' ? 'rules' : 'bylaws';
+      document.getElementById(`${prefix}EditId`).value = '';
+      document.getElementById(`${prefix}Title`).value = '';
+      document.getElementById(`${prefix}Text`).value = '';
+      document.getElementById(`${prefix}File`).value = '';
+    }
+
+    function addBylawRoom() {
+      const name = document.getElementById('newBylawRoomName').value.trim();
+      if (!name) { alert('회칙 방 이름을 입력하세요.'); return; }
+      getAllFromStore('bylawRooms', (items) => {
+        if (items.some(p => p.name === name)) { alert('이미 있는 회칙 방 이름입니다.'); return; }
+        const tx = db.transaction('bylawRooms', 'readwrite');
+        tx.objectStore('bylawRooms').add({ name, detailTitle: '', link: '', description: '', tableText: '', fileName: '', fileBlob: null, date: new Date().toLocaleDateString() });
+        tx.oncomplete = function() {
+          document.getElementById('newBylawRoomName').value = '';
+          renderBylawRooms();
+        };
+      });
+    }
+
+    function renderBylawRooms() {
+      if (!db) return;
+      getAllFromStore('bylawRooms', (items) => {
+        const container = document.getElementById('bylawRoomContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        if (items.length === 0) {
+          container.innerHTML = '<div class="small-guide">아직 등록된 회칙 방이 없습니다.</div>';
+          return;
+        }
+        items.forEach(item => {
+          const box = document.createElement('div');
+          box.className = 'room-box simple-room-box';
+          box.innerHTML = `<div class="room-header" style="background:#8e44ad;">${esc(item.name)}</div>`;
+          box.onclick = () => openBylawRoom(item.id);
+          container.appendChild(box);
+        });
+      });
+    }
+
+    function openBylawRoom(id) {
+      currentBylawRoomId = id;
+      const tx = db.transaction('bylawRooms', 'readonly');
+      tx.objectStore('bylawRooms').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        document.getElementById('bylawDetailPanel').style.display = 'block';
+        document.getElementById('bylawDetailTitle').innerText = item.name || '회칙 상세';
+        document.getElementById('bylawInnerTitle').value = item.detailTitle || '';
+        document.getElementById('bylawLink').value = item.link || '';
+        document.getElementById('bylawDesc').value = item.description || '';
+        document.getElementById('bylawTableText').value = item.tableText || '';
+        document.getElementById('bylawFile').value = '';
+        document.getElementById('bylawFileViewArea').innerHTML = item.fileBlob ? `<span class="file-tag">${esc(item.fileName || '첨부파일')}</span> <button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewBylawFile()">파일보기</button>` : '<span style="font-size:12px; color:#777;">첨부파일 없음</span>';
+        refreshBylawPreview();
+      };
+    }
+
+    function renameCurrentBylawRoom() {
+      if (!currentBylawRoomId) return;
+      const tx = db.transaction('bylawRooms', 'readwrite');
+      const store = tx.objectStore('bylawRooms');
+      store.get(currentBylawRoomId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        const newName = prompt('새 방 이름을 입력하세요.', item.name || '');
+        if (!newName || !newName.trim()) return;
+        item.name = newName.trim();
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        renderBylawRooms();
+        openBylawRoom(currentBylawRoomId);
+      };
+    }
+
+    function saveBylawDetail() {
+      if (!currentBylawRoomId) { alert('먼저 회칙 방을 선택하세요.'); return; }
+      const detailTitle = document.getElementById('bylawInnerTitle').value.trim();
+      const link = document.getElementById('bylawLink').value.trim();
+      const description = document.getElementById('bylawDesc').value.trim();
+      const tableText = document.getElementById('bylawTableText').value.trim();
+      const fileInput = document.getElementById('bylawFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      const tx = db.transaction('bylawRooms', 'readwrite');
+      const store = tx.objectStore('bylawRooms');
+      store.get(currentBylawRoomId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        item.detailTitle = detailTitle;
+                item.link = link;
+        item.description = description;
+        item.tableText = tableText;
+        item.date = new Date().toLocaleDateString();
+        item.modifiedAt = getNowStamp();
+        if (newFile) {
+          item.fileName = newFile.name;
+          item.fileBlob = newFile;
+        }
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        alert('저장되었습니다.');
+        renderBylawRooms();
+        openBylawRoom(currentBylawRoomId);
+      };
+    }
+
+    function deleteCurrentBylawRoom() {
+      if (!currentBylawRoomId) return;
+      if (!confirm('이 회칙 방을 삭제하시겠습니까?')) return;
+      const tx = db.transaction('bylawRooms', 'readwrite');
+      tx.objectStore('bylawRooms').delete(currentBylawRoomId);
+      tx.oncomplete = function() {
+        currentBylawRoomId = null;
+        document.getElementById('bylawDetailPanel').style.display = 'none';
+        renderBylawRooms();
+      };
+    }
+
+    function refreshBylawPreview() {
+      const text = document.getElementById('bylawTableText').value;
+      document.getElementById('bylawTablePreview').innerHTML = parseTableTextToHtml(text);
+    }
+
+    function viewBylawFile() {
+      if (!currentBylawRoomId) return;
+      const tx = db.transaction('bylawRooms', 'readonly');
+      tx.objectStore('bylawRooms').get(currentBylawRoomId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (item && item.fileBlob) openBlob(item.fileBlob);
+        else alert('첨부파일이 없습니다.');
+      };
+    }
+
+    function addProjectRoom() {
+      const name = document.getElementById('newProjectName').value.trim();
+      if (!name) { alert('사업 이름을 입력하세요.'); return; }
+      getAllFromStore('projects', (items) => {
+        if (items.some(p => p.name === name)) { alert('이미 있는 사업 이름입니다.'); return; }
+        const tx = db.transaction('projects', 'readwrite');
+        tx.objectStore('projects').add({ name, detailTitle: '', author: '', link: '', description: '', tableText: '', fileName: '', fileBlob: null, createdAt: getNowStamp(), modifiedAt: getNowStamp(), date: new Date().toLocaleDateString() });
+        tx.oncomplete = function() {
+          document.getElementById('newProjectName').value = '';
+          renderProjectRooms();
+        };
+      });
+    }
+
+    function renderProjectRooms() {
+      if (!db) return;
+      getAllFromStore('projects', (items) => {
+        const container = document.getElementById('projectRoomContainer');
+        container.innerHTML = '';
+        const query = (document.getElementById('projectSearchInput')?.value || '').trim().toLowerCase();
+        const filtered = items.filter(item => { const text = `${item.name || ''} ${item.detailTitle || ''} ${item.description || ''} ${item.author || ''}`.toLowerCase(); return !query || text.includes(query); });
+        if (filtered.length === 0) {
+          container.innerHTML = '<div class="small-guide">검색 결과가 없습니다.</div>';
+          return;
+        }
+        filtered.forEach(item => {
+          const box = document.createElement('div');
+          box.className = 'room-box simple-room-box';
+          box.innerHTML = `<div class="room-header" style="background:#d35400;">${esc(item.name)}</div>`;
+          box.onclick = () => openProjectRoom(item.id);
+          container.appendChild(box);
+        });
+      });
+    }
+
+    function openProjectRoom(id) {
+      currentProjectId = id;
+      const tx = db.transaction('projects', 'readonly');
+      tx.objectStore('projects').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        document.getElementById('projectDetailPanel').style.display = 'block';
+        document.getElementById('projectDetailTitle').innerText = item.name || '추진사업 상세';
+        document.getElementById('projectInnerTitle').value = item.detailTitle || '';
+        document.getElementById('projectAuthor').value = item.author || '';
+        document.getElementById('projectLink').value = item.link || '';
+        document.getElementById('projectDesc').value = item.description || '';
+        document.getElementById('projectTableText').value = item.tableText || '';
+        document.getElementById('projectFile').value = '';
+        document.getElementById('projectFileViewArea').innerHTML = item.fileBlob ? `<span class="file-tag">${esc(item.fileName || '첨부파일')}</span> <button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewProjectFile()">파일보기</button>` : '<span style="font-size:12px; color:#777;">첨부파일 없음</span>';
+        document.getElementById('projectMetaInfo').innerHTML = `작성자: <b>${esc(item.author || '')}</b> / 등록일: ${esc(item.createdAt || item.date || '')} / 수정일: ${esc(item.modifiedAt || item.createdAt || item.date || '')}`;
+        refreshProjectPreview();
+      };
+    }
+
+    function renameCurrentProjectRoom() {
+      if (!currentProjectId) return;
+      const tx = db.transaction('projects', 'readwrite');
+      const store = tx.objectStore('projects');
+      store.get(currentProjectId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        const newName = prompt('새 사업명을 입력하세요.', item.name || '');
+        if (!newName || !newName.trim()) return;
+        item.name = newName.trim();
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        renderProjectRooms();
+        openProjectRoom(currentProjectId);
+      };
+    }
+
+    function saveProjectDetail() {
+      if (!currentProjectId) { alert('먼저 추진사업을 선택하세요.'); return; }
+      const detailTitle = document.getElementById('projectInnerTitle').value.trim();
+      const author = document.getElementById('projectAuthor').value.trim();
+      const link = document.getElementById('projectLink').value.trim();
+      const description = document.getElementById('projectDesc').value.trim();
+      const tableText = document.getElementById('projectTableText').value.trim();
+      const fileInput = document.getElementById('projectFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      const tx = db.transaction('projects', 'readwrite');
+      const store = tx.objectStore('projects');
+      store.get(currentProjectId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        item.detailTitle = detailTitle;
+                item.link = link;
+        item.description = description;
+        item.tableText = tableText;
+        item.date = new Date().toLocaleDateString();
+        item.modifiedAt = getNowStamp();
+        if (newFile) {
+          item.fileName = newFile.name;
+          item.fileBlob = newFile;
+        }
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        alert('저장되었습니다.');
+        renderProjectRooms();
+        openProjectRoom(currentProjectId);
+      };
+    }
+
+    function deleteCurrentProjectRoom() {
+      if (!currentProjectId) return;
+      if (!confirm('이 추진사업을 삭제하시겠습니까?')) return;
+      const tx = db.transaction('projects', 'readwrite');
+      tx.objectStore('projects').delete(currentProjectId);
+      tx.oncomplete = function() {
+        currentProjectId = null;
+        document.getElementById('projectDetailPanel').style.display = 'none';
+        renderProjectRooms();
+      };
+    }
+
+    function refreshProjectPreview() {
+      const text = document.getElementById('projectTableText').value;
+      document.getElementById('projectTablePreview').innerHTML = parseTableTextToHtml(text);
+    }
+
+    function viewProjectFile() {
+      if (!currentProjectId) return;
+      const tx = db.transaction('projects', 'readonly');
+      tx.objectStore('projects').get(currentProjectId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (item && item.fileBlob) openBlob(item.fileBlob);
+        else alert('첨부파일이 없습니다.');
+      };
+    }
+
+    function renderAdminRoom() {
+      adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
+      masterAdminPassword = localStorage.getItem('masterAdminPassword') || '';
+      document.getElementById('adminPasswordSetupBox').style.display = 'none';
+      document.getElementById('adminPasswordLoginBox').style.display = 'none';
+      document.getElementById('adminControlBox').style.display = 'none';
+      document.getElementById('masterAdminSetupBox').style.display = 'none';
+      document.getElementById('masterAdminLoginBox').style.display = 'none';
+      document.getElementById('masterAdminControlBox').style.display = 'none';
+      if (!adminRoomPassword) document.getElementById('adminPasswordSetupBox').style.display = 'block';
+      else if (!isAdminAuthenticated) document.getElementById('adminPasswordLoginBox').style.display = 'block';
+      else {
+        document.getElementById('adminControlBox').style.display = 'block';
+        renderAdminCategories();
+      }
+
+      if (!masterAdminPassword) document.getElementById('masterAdminSetupBox').style.display = 'block';
+      else if (!isMasterAdminAuthenticated) document.getElementById('masterAdminLoginBox').style.display = 'block';
+      else document.getElementById('masterAdminControlBox').style.display = 'block';
+    }
+
+    function setMasterAdminPassword() {
+      const pw = document.getElementById('newMasterAdminPassword').value.trim();
+      if (!pw) { alert('최고관리자 비밀번호를 입력하세요.'); return; }
+      localStorage.setItem('masterAdminPassword', pw);
+      masterAdminPassword = pw;
+      document.getElementById('newMasterAdminPassword').value = '';
+      alert('최고관리자 비밀번호가 설정되었습니다.');
+      renderAdminRoom();
+    }
+
+    function loginMasterAdmin() {
+      const inputPw = document.getElementById('masterAdminLoginPassword').value.trim();
+      masterAdminPassword = localStorage.getItem('masterAdminPassword') || '';
+      if (inputPw === masterAdminPassword) {
+        isMasterAdminAuthenticated = true;
+        document.getElementById('masterAdminLoginPassword').value = '';
+        renderAdminRoom();
+      } else {
+        alert('최고관리자 비밀번호가 일치하지 않습니다.');
+      }
+    }
+
+    function logoutMasterAdmin() {
+      isMasterAdminAuthenticated = false;
+      renderAdminRoom();
+    }
+
+    function changeMasterAdminPassword() {
+      if (!isMasterAdminAuthenticated) { alert('먼저 최고관리자 재설정 모드에 로그인하세요.'); return; }
+      const newPw = prompt('새 최고관리자 비밀번호를 입력하세요.');
+      if (!newPw || !newPw.trim()) return;
+      localStorage.setItem('masterAdminPassword', newPw.trim());
+      masterAdminPassword = newPw.trim();
+      alert('최고관리자 비밀번호가 변경되었습니다.');
+      renderAdminRoom();
+    }
+
+    function resetAdminPasswordByMaster() {
+      if (!isMasterAdminAuthenticated) { alert('먼저 최고관리자 재설정 모드에 로그인하세요.'); return; }
+      const newPw = prompt('새 관리자방 비밀번호를 입력하세요.');
+      if (!newPw || !newPw.trim()) return;
+      localStorage.setItem('adminRoomPassword', newPw.trim());
+      adminRoomPassword = newPw.trim();
+      isAdminAuthenticated = false;
+      currentAdminRoomId = null;
+      const panel = document.getElementById('adminCategoryDetailPanel');
+      if (panel) panel.style.display = 'none';
+      alert('관리자방 비밀번호가 재설정되었습니다. 새 비밀번호로 다시 로그인하세요.');
+      renderAdminRoom();
+    }
+
+    function resetRentalPasswordByMaster() {
+      if (!isMasterAdminAuthenticated) { alert('먼저 최고관리자 재설정 모드에 로그인하세요.'); return; }
+      const newPw = prompt('새 대여방 비밀번호를 입력하세요.');
+      if (!newPw || !newPw.trim()) return;
+      localStorage.setItem('rentalRoomPassword', newPw.trim());
+      rentalRoomPassword = newPw.trim();
+      isRentalAuthenticated = false;
+      alert('대여방 비밀번호가 재설정되었습니다. 새 비밀번호로 다시 로그인하세요.');
+      renderRentalRoom();
+      renderAdminRoom();
+    }
+
+    function setAdminPassword() {
+      const pw = document.getElementById('newAdminPassword').value.trim();
+      if (!pw) { alert('비밀번호를 입력하세요.'); return; }
+      localStorage.setItem('adminRoomPassword', pw);
+      adminRoomPassword = pw;
+      document.getElementById('newAdminPassword').value = '';
+      alert('관리자 비밀번호가 설정되었습니다.');
+      renderAdminRoom();
+    }
+
+    function loginAdminRoom() {
+      const inputPw = document.getElementById('adminLoginPassword').value.trim();
+      adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
+      if (inputPw === adminRoomPassword) {
+        isAdminAuthenticated = true;
+        document.getElementById('adminLoginPassword').value = '';
+        renderAdminRoom();
+      } else alert('비밀번호가 일치하지 않습니다.');
+    }
+
+    function logoutAdminRoom() {
+      isAdminAuthenticated = false;
+      currentAdminRoomId = null;
+      document.getElementById('adminCategoryDetailPanel').style.display = 'none';
+      renderAdminRoom();
+    }
+
+    function saveAdminCategory() {
+      const name = document.getElementById('adminCategoryName').value.trim();
+      if (!name) { alert('카테고리 이름을 입력하세요.'); return; }
+      getAllFromStore('adminRooms', (items) => {
+        if (items.some(r => r.name === name)) { alert('이미 있는 카테고리 이름입니다.'); return; }
+        const tx = db.transaction('adminRooms', 'readwrite');
+        tx.objectStore('adminRooms').add({ name, link: '', content: '', fileName: '', fileBlob: null, date: new Date().toLocaleDateString() });
+        tx.oncomplete = function() {
+          resetAdminCategoryForm();
+          renderAdminCategories();
+        };
+      });
+    }
+
+    function resetAdminCategoryForm() {
+      document.getElementById('adminCategoryName').value = '';
+    }
+
+    function renderAdminCategories() {
+      if (!db) return;
+      getAllFromStore('adminRooms', (items) => {
+        const container = document.getElementById('adminCategoryRoomContainer');
+        container.innerHTML = '';
+        if (items.length === 0) {
+          container.innerHTML = '<div class="small-guide">아직 만든 관리자 카테고리 방이 없습니다.</div>';
+          return;
+        }
+        items.forEach(item => {
+          const box = document.createElement('div');
+          box.className = 'room-box simple-room-box';
+          box.innerHTML = `<div class="room-header" style="background:#c0392b;">${esc(item.name)}</div>`;
+          box.onclick = () => openAdminCategoryRoom(item.id);
+          container.appendChild(box);
+        });
+      });
+    }
+
+    function openAdminCategoryRoom(id) {
+      currentAdminRoomId = id;
+      const tx = db.transaction('adminRooms', 'readonly');
+      tx.objectStore('adminRooms').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        document.getElementById('adminCategoryDetailPanel').style.display = 'block';
+        document.getElementById('adminCategoryDetailTitle').innerText = item.name || '관리자 카테고리';
+        document.getElementById('adminCategoryLink').value = item.link || '';
+        document.getElementById('adminCategoryContent').value = item.content || '';
+        document.getElementById('adminCategoryFile').value = '';
+        document.getElementById('adminCategoryFileViewArea').innerHTML = item.fileBlob ? `<span class="file-tag">${esc(item.fileName || '첨부파일')}</span> <button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewAdminCategoryFile()">파일보기</button>` : '<span style="font-size:12px; color:#777;">첨부파일 없음</span>';
+      };
+    }
+
+    function renameCurrentAdminCategory() {
+      if (!currentAdminRoomId) return;
+      const tx = db.transaction('adminRooms', 'readwrite');
+      const store = tx.objectStore('adminRooms');
+      store.get(currentAdminRoomId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        const newName = prompt('새 방 이름을 입력하세요.', item.name || '');
+        if (!newName || !newName.trim()) return;
+        item.name = newName.trim();
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        renderAdminCategories();
+        openAdminCategoryRoom(currentAdminRoomId);
+      };
+    }
+
+    function saveAdminCategoryDetail() {
+      if (!currentAdminRoomId) { alert('먼저 관리자 카테고리 방을 선택하세요.'); return; }
+      const link = document.getElementById('adminCategoryLink').value.trim();
+      const content = document.getElementById('adminCategoryContent').value.trim();
+      const fileInput = document.getElementById('adminCategoryFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      const tx = db.transaction('adminRooms', 'readwrite');
+      const store = tx.objectStore('adminRooms');
+      store.get(currentAdminRoomId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        item.link = link;
+        item.content = content;
+        item.date = new Date().toLocaleDateString();
+        if (newFile) {
+          item.fileName = newFile.name;
+          item.fileBlob = newFile;
+        }
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        alert('저장되었습니다.');
+        renderAdminCategories();
+        openAdminCategoryRoom(currentAdminRoomId);
+      };
+    }
+
+    function viewAdminCategoryFile() {
+      if (!currentAdminRoomId) return;
+      const tx = db.transaction('adminRooms', 'readonly');
+      tx.objectStore('adminRooms').get(currentAdminRoomId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item || !item.fileBlob) { alert('첨부파일이 없습니다.'); return; }
+        const kind = detectFileKind(item.fileName, item.fileBlob.type);
+        if (kind === 'video' || kind === 'image' || kind === 'pdf') openBlob(item.fileBlob);
+        else openBlob(item.fileBlob);
+      };
+    }
+
+    function deleteCurrentAdminCategory() {
+      if (!currentAdminRoomId) return;
+      if (!confirm('이 관리자 카테고리 방을 삭제하시겠습니까?')) return;
+      const id = currentAdminRoomId;
+      const tx = db.transaction('adminRooms', 'readwrite');
+      tx.objectStore('adminRooms').delete(id);
+      tx.oncomplete = function() {
+        currentAdminRoomId = null;
+        document.getElementById('adminCategoryDetailPanel').style.display = 'none';
+        renderAdminCategories();
+      };
+    }
+
+
+
+    function saveAssetCategoryColors() {
+      localStorage.setItem('assetCategoryColors', JSON.stringify(assetCategoryColors || {}));
+    }
+
+    function getAssetCategoryColor(catName) {
+      return (assetCategoryColors && assetCategoryColors[catName]) ? assetCategoryColors[catName] : '#e67e22';
+    }
+
+    function saveCurrentAssetCategoryColor() {
+      if (!currentActiveAssetCat) { alert('먼저 관리방 분류를 선택하세요.'); return; }
+      const color = document.getElementById('assetCategoryEditColor')?.value || '#e67e22';
+      assetCategoryColors[currentActiveAssetCat] = color;
+      saveAssetCategoryColors();
+      renderAssetCategories();
+      alert('방 색이 저장되었습니다.');
+      if (document.getElementById('assetCategoryModal').style.display === 'flex') openAssetCategoryModal(currentActiveAssetCat);
+    }
+
+    function addAssetCategory() {
+      const nameInput = document.getElementById('newCategoryName');
+      const colorInput = document.getElementById('newAssetCategoryColor');
+      const catName = nameInput.value.trim();
+      const color = colorInput ? colorInput.value : '#e67e22';
+      if (!catName) { alert('분류 이름을 입력하세요!'); return; }
+      const tx = db.transaction('assets', 'readwrite');
+      const store = tx.objectStore('assets');
+      store.getAll().onsuccess = function(e) {
+        const exists = e.target.result.some(item => item.category === catName);
+        if (exists) { alert('이미 존재하는 분류입니다.'); return; }
+        store.add({ category: catName, name: '', qty: '', place: '', status: '사용가능', note: '', imageBlob: null });
+        assetCategoryColors[catName] = color;
+        saveAssetCategoryColors();
+        nameInput.value = '';
+        if (colorInput) colorInput.value = '#e67e22';
+        renderAssetCategories();
+      };
+    }
+
+    function renderAssetCategories() {
+      if (!db) return;
+      const tx = db.transaction('assets', 'readonly');
+      const store = tx.objectStore('assets');
+      store.getAll().onsuccess = function(e) {
+        const assetsData = e.target.result;
+        const container = document.getElementById('assetCategoryContainer');
+        container.innerHTML = '';
+        const defaultCats = ['소모품', '보드게임'];
+        const catsSet = new Set(defaultCats);
+        assetsData.forEach(item => { if (item.category) catsSet.add(item.category); });
+        [...catsSet].forEach(cat => {
+          const count = assetsData.filter(item => item.category === cat && item.name).length;
+          const roomBox = document.createElement('div');
+          roomBox.className = 'room-box';
+          const color = getAssetCategoryColor(cat);
+          roomBox.innerHTML = `<div class="room-header" style="background:${esc(color)};">📦 ${esc(cat)}</div><div class="room-body">품목 ${count}개</div>`;
+          roomBox.onclick = () => openAssetCategoryModal(cat);
+          container.appendChild(roomBox);
+        });
+      };
+    }
+
+    function openAssetCategoryModal(catName) {
+      currentActiveAssetCat = catName;
+      document.getElementById('assetCategoryModalTitle').innerText = `${catName} 관리`;
+      const colorEl = document.getElementById('assetCategoryEditColor');
+      if (colorEl) colorEl.value = getAssetCategoryColor(catName);
+      document.getElementById('assetNameInput').value = '';
+      document.getElementById('assetQtyInput').value = '';
+      document.getElementById('assetPlaceInput').value = '';
+      document.getElementById('assetStatusInput').value = '사용가능';
+      document.getElementById('assetNoteInput').value = '';
+      document.getElementById('assetImageInput').value = '';
+      const tx = db.transaction('assets', 'readonly');
+      tx.objectStore('assets').getAll().onsuccess = function(e) {
+        const assetsData = e.target.result;
+        const tbody = document.getElementById('assetItemsTableBody');
+        tbody.innerHTML = '';
+        const filtered = assetsData.filter(item => item.category === catName && item.name);
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="color:#666;">등록된 품목이 없습니다.</td></tr>`;
+        } else {
+          filtered.forEach(item => {
+            const imgTag = item.imageBlob ? `<img src="${makeUrl(item.imageBlob)}" class="asset-thumb" onclick="viewAssetImage(${item.id})">` : `<span style="font-size:11px; color:#999;">사진없음</span>`;
+            tbody.innerHTML += `<tr>
+              <td>${imgTag}</td>
+              <td><input type="text" id="edit_name_${item.id}" value="${esc(item.name)}"></td>
+              <td><input type="text" id="edit_qty_${item.id}" value="${esc(item.qty)}"></td>
+              <td><input type="text" id="edit_place_${item.id}" value="${esc(item.place)}"></td>
+              <td>
+                <select id="edit_status_${item.id}">
+                  <option value="사용가능" ${item.status === '사용가능' ? 'selected' : ''}>사용가능</option>
+                  <option value="대여중" ${item.status === '대여중' ? 'selected' : ''}>대여중</option>
+                  <option value="수리중" ${item.status === '수리중' ? 'selected' : ''}>수리중</option>
+                  <option value="폐기예정" ${item.status === '폐기예정' ? 'selected' : ''}>폐기예정</option>
+                </select>
+              </td>
+              <td><input type="text" id="edit_note_${item.id}" value="${esc(item.note)}"></td>
+              <td><button class="action-btn success-btn" style="padding:4px 8px; font-size:11px;" onclick="updateAssetItem(${item.id})">수정</button> <button class="action-btn danger-btn" style="padding:4px 8px; font-size:11px;" onclick="deleteAssetItem(${item.id})">삭제</button></td>
+            </tr>`;
+          });
+        }
+        document.getElementById('assetCategoryModal').style.display = 'flex';
+      };
+    }
+
+    function deleteCurrentAssetCategory() {
+      if (!confirm(`'${currentActiveAssetCat}' 분류와 안에 속한 모든 품목을 삭제하시겠습니까?`)) return;
+      const targetName = currentActiveAssetCat;
+      const tx = db.transaction('assets', 'readwrite');
+      const store = tx.objectStore('assets');
+      store.getAll().onsuccess = function(e) {
+        e.target.result.forEach(item => {
+          if (item.category === targetName) store.delete(item.id);
+        });
+      };
+      tx.oncomplete = function() {
+        delete assetCategoryColors[targetName];
+        saveAssetCategoryColors();
+        alert('분류가 삭제되었습니다.');
+        closeAssetCategoryModal();
+        renderAssetCategories();
+      };
+    }
+
+    function resetIdeaPostForm() {
+      currentIdeaPostId = null;
+      document.getElementById('ideaPostEditId').value = '';
+      document.getElementById('ideaPostTitle').value = '';
+      document.getElementById('ideaPostText').value = '';
+      document.getElementById('ideaPostAuthor').value = '';
+      document.getElementById('ideaPostLink').value = '';
+      document.getElementById('ideaPostFile').value = '';
+      const info = document.getElementById('ideaPostCurrentFileInfo');
+      if (info) info.innerText = '현재 첨부파일 없음';
+    }
+
+    function openIdeaRoom(id) {
+      currentIdeaRoomId = id;
+      const tx = db.transaction('ideaRooms', 'readonly');
+      tx.objectStore('ideaRooms').get(id).onsuccess = function(e) {
+        const room = e.target.result;
+        if (!room) return;
+        currentIdeaRoomName = room.name || '';
+        document.getElementById('ideaRoomDetail').style.display = 'block';
+        document.getElementById('ideaRoomDetailTitle').innerText = currentIdeaRoomName;
+        document.getElementById('ideaRoomEditColor').value = room.color || '#2980b9';
+        resetIdeaPostForm();
+        currentIdeaPostId = null;
+        const detailPanel = document.getElementById('ideaPostDetailPanel');
+        if (detailPanel) detailPanel.style.display = 'none';
+        renderIdeaPosts(id);
+      };
+    }
+
+    function saveIdeaPost() {
+      if (!currentIdeaRoomId) { alert('먼저 아이디어 방을 선택하세요.'); return; }
+      const editId = document.getElementById('ideaPostEditId').value;
+      const title = document.getElementById('ideaPostTitle').value.trim();
+      const textVal = document.getElementById('ideaPostText').value.trim();
+      const author = document.getElementById('ideaPostAuthor').value.trim();
+      const link = document.getElementById('ideaPostLink').value.trim();
+      const fileInput = document.getElementById('ideaPostFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      if (!title) { alert('자료 제목을 입력하세요.'); return; }
+      const tx = db.transaction('ideaPosts', 'readwrite');
+      const store = tx.objectStore('ideaPosts');
+      let savedId = editId ? Number(editId) : null;
+      if (!editId) {
+        const req = store.add({ roomId: currentIdeaRoomId, title, text: textVal, author, link, fileName: newFile ? newFile.name : '', fileBlob: newFile || null, createdAt: getNowStamp(), modifiedAt: getNowStamp(), date: new Date().toLocaleDateString() });
+        req.onsuccess = function(e) { savedId = e.target.result; };
+      } else {
+        store.get(Number(editId)).onsuccess = function(e) {
+          const record = e.target.result;
+          if (!record) return;
+          record.title = title;
+          record.text = textVal;
+          record.author = author;
+          record.link = link;
+          record.date = new Date().toLocaleDateString();
+          record.modifiedAt = getNowStamp();
+          if (newFile) {
+            record.fileName = newFile.name;
+            record.fileBlob = newFile;
+          }
+          store.put(record);
+        };
+      }
+      tx.oncomplete = function() {
+        resetIdeaPostForm();
+        renderIdeaPosts(currentIdeaRoomId);
+        if (savedId) setTimeout(() => openIdeaPostDetail(savedId), 60);
+      };
+    }
+
+    function renderIdeaPosts(roomId) {
+      getAllFromStore('ideaPosts', (posts) => {
+        const list = document.getElementById('ideaPostTitleList');
+        const query = (document.getElementById('ideaSearchInput')?.value || '').trim().toLowerCase();
+        const filtered = posts.filter(p => p.roomId === roomId).filter(p => {
+          const text = `${p.title || ''} ${p.text || ''} ${p.author || ''} ${p.link || ''}`.toLowerCase();
+          return !query || text.includes(query);
+        });
+        list.innerHTML = '';
+        if (filtered.length === 0) {
+          list.innerHTML = '<div class="small-guide">등록된 자료가 없습니다.</div>';
+          const detailPanel = document.getElementById('ideaPostDetailPanel');
+          if (detailPanel) detailPanel.style.display = 'none';
+          currentIdeaPostId = null;
+          return;
+        }
+        filtered.forEach(item => {
+          const box = document.createElement('div');
+          box.className = 'room-box simple-room-box';
+          box.innerHTML = `<div class="room-header" style="background:#2980b9;">${esc(item.title)}</div>`;
+          box.onclick = () => openIdeaPostDetail(item.id);
+          list.appendChild(box);
+        });
+      });
+    }
+
+    function openIdeaPostDetail(id) {
+      currentIdeaPostId = id;
+      const tx = db.transaction('ideaPosts', 'readonly');
+      tx.objectStore('ideaPosts').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        document.getElementById('ideaPostDetailPanel').style.display = 'block';
+        document.getElementById('ideaPostDetailTitle').innerText = item.title || '자료 상세';
+        document.getElementById('ideaPostDetailMeta').innerHTML = `작성자: <b>${esc(item.author || '')}</b> / 등록일: ${esc(item.createdAt || item.date || '')} / 수정일: ${esc(item.modifiedAt || item.createdAt || item.date || '')}`;
+        document.getElementById('ideaPostDetailLink').innerHTML = item.link ? `관련 링크: <a href="${esc(item.link)}" target="_blank">${esc(item.link)}</a>` : '관련 링크 없음';
+        document.getElementById('ideaPostDetailText').innerHTML = item.text ? esc(item.text).replace(/\n/g, '<br>') : '<span style="color:#777;">내용이 없습니다.</span>';
+        let fileHtml = '<span style="color:#777;">첨부파일이 없습니다.</span>';
+        if (item.fileBlob) {
+          const kind = detectFileKind(item.fileName, item.fileBlob.type);
+          const openBtn = kind === 'video' ? `<button class="action-btn" onclick="previewIdeaPostMedia(${item.id})">동영상 재생</button>`
+            : kind === 'image' ? `<button class="action-btn" onclick="previewIdeaPostMedia(${item.id})">이미지 보기</button>`
+            : kind === 'pdf' ? `<button class="action-btn" onclick="previewIdeaPostMedia(${item.id})">PDF 보기</button>`
+            : `<button class="action-btn" onclick="viewIdeaPostFile(${item.id})">파일 열기/다운로드</button>`;
+          fileHtml = `<div><span class="file-tag">${esc(item.fileName || '첨부파일')}</span> ${openBtn}</div><div class="small-guide" style="margin-top:6px;">수정할 때 새 파일을 선택해 저장하면 기존 파일이 교체됩니다.</div>`;
+        }
+        document.getElementById('ideaPostDetailFileArea').innerHTML = fileHtml;
+      };
+    }
+
+    function editIdeaPost(id) {
+      const tx = db.transaction('ideaPosts', 'readonly');
+      tx.objectStore('ideaPosts').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        currentIdeaPostId = id;
+        document.getElementById('ideaPostEditId').value = item.id;
+        document.getElementById('ideaPostTitle').value = item.title || '';
+        document.getElementById('ideaPostText').value = item.text || '';
+        document.getElementById('ideaPostAuthor').value = item.author || '';
+        document.getElementById('ideaPostLink').value = item.link || '';
+        document.getElementById('ideaPostFile').value = '';
+        const info = document.getElementById('ideaPostCurrentFileInfo');
+        if (info) info.innerHTML = item.fileBlob ? `현재 첨부파일: <span class="file-tag">${esc(item.fileName || '첨부파일')}</span> / 새 파일을 선택하면 교체됩니다.` : '현재 첨부파일 없음';
+      };
+    }
+
+    function editCurrentIdeaPost() {
+      if (!currentIdeaPostId) { alert('먼저 자료 제목을 선택하세요.'); return; }
+      editIdeaPost(currentIdeaPostId);
+      window.scrollTo({ top: document.getElementById('ideaRoomDetail').offsetTop - 20, behavior: 'smooth' });
+    }
+
+    function deleteCurrentIdeaPost() {
+      if (!currentIdeaPostId) { alert('먼저 자료 제목을 선택하세요.'); return; }
+      deleteIdeaPost(currentIdeaPostId);
+    }
+
+    function deleteIdeaPost(id) {
+      if (!confirm('이 자료를 삭제하시겠습니까?')) return;
+      const tx = db.transaction('ideaPosts', 'readwrite');
+      tx.objectStore('ideaPosts').delete(id);
+      tx.oncomplete = function() {
+        if (currentIdeaPostId === id) {
+          currentIdeaPostId = null;
+          document.getElementById('ideaPostDetailPanel').style.display = 'none';
+        }
+        renderIdeaPosts(currentIdeaRoomId);
+        resetIdeaPostForm();
+        closeIdeaMediaPreview();
+      };
+    }
+
+    function makeContentEditableTableFromText(textVal) {
+      const raw = String(textVal || '').trim();
+      const rows = raw ? raw.split(/\n+/).map(line => line.split('|').map(c => c.trim())) : [['항목', '내용'], ['', '']];
+      let html = '<table><tbody>';
+      rows.forEach((row, rowIndex) => {
+        html += '<tr>';
+        row.forEach((cell) => {
+          const tag = rowIndex === 0 ? 'th' : 'td';
+          html += `<${tag} contenteditable="true">${esc(cell)}</${tag}>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function syncProjectTableTextFromEditor() {
+      const editor = document.querySelector('#projectEditableTable table');
+      const textarea = document.getElementById('projectTableText');
+      if (!editor || !textarea) return;
+      const lines = [];
+      editor.querySelectorAll('tr').forEach(tr => {
+        const cells = [...tr.children].map(cell => cell.innerText.replace(/\n/g, ' ').trim());
+        lines.push(cells.join(' | '));
+      });
+      textarea.value = lines.join('\n');
+    }
+
+    function refreshProjectPreview() {
+      const editorWrap = document.getElementById('projectEditableTable');
+      const textarea = document.getElementById('projectTableText');
+      if (!editorWrap || !textarea) return;
+      editorWrap.innerHTML = makeContentEditableTableFromText(textarea.value);
+      const table = editorWrap.querySelector('table');
+      if (table) table.classList.add('hwp-table');
+    }
+
+    function addProjectTableRow() {
+      const table = document.querySelector('#projectEditableTable table');
+      if (!table) { refreshProjectPreview(); return; }
+      const firstRow = table.querySelector('tr');
+      const colCount = firstRow ? firstRow.children.length : 2;
+      const tr = document.createElement('tr');
+      for (let i = 0; i < colCount; i++) {
+        const td = document.createElement('td');
+        td.contentEditable = 'true';
+        td.innerText = '';
+        tr.appendChild(td);
+      }
+      table.querySelector('tbody').appendChild(tr);
+      syncProjectTableTextFromEditor();
+    }
+
+    function addProjectTableColumn() {
+      const table = document.querySelector('#projectEditableTable table');
+      if (!table) { refreshProjectPreview(); return; }
+      table.querySelectorAll('tr').forEach((tr, idx) => {
+        const cell = document.createElement(idx === 0 ? 'th' : 'td');
+        cell.contentEditable = 'true';
+        cell.innerText = '';
+        tr.appendChild(cell);
+      });
+      syncProjectTableTextFromEditor();
+    }
+
+    function openProjectRoom(id) {
+      currentProjectId = id;
+      const tx = db.transaction('projects', 'readonly');
+      tx.objectStore('projects').get(id).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        document.getElementById('projectDetailPanel').style.display = 'block';
+        document.getElementById('projectDetailTitle').innerText = item.name || '추진사업 상세';
+        document.getElementById('projectInnerTitle').value = item.detailTitle || '';
+        document.getElementById('projectAuthor').value = item.author || '';
+        document.getElementById('projectLink').value = item.link || '';
+        document.getElementById('projectDesc').value = item.description || '';
+        document.getElementById('projectTableText').value = item.tableText || '';
+        document.getElementById('projectFile').value = '';
+        document.getElementById('projectFileViewArea').innerHTML = item.fileBlob ? `<span class="file-tag">${esc(item.fileName || '첨부파일')}</span> <button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewProjectFile()">파일보기</button>` : '<span style="font-size:12px; color:#777;">첨부파일 없음</span>';
+        document.getElementById('projectMetaInfo').innerHTML = `작성자: <b>${esc(item.author || '')}</b> / 등록일: ${esc(item.createdAt || item.date || '')} / 수정일: ${esc(item.modifiedAt || item.createdAt || item.date || '')}`;
+        refreshProjectPreview();
+      };
+    }
+
+    function saveProjectDetail() {
+      if (!currentProjectId) { alert('먼저 추진사업을 선택하세요.'); return; }
+      syncProjectTableTextFromEditor();
+      const detailTitle = document.getElementById('projectInnerTitle').value.trim();
+      const author = document.getElementById('projectAuthor').value.trim();
+      const link = document.getElementById('projectLink').value.trim();
+      const description = document.getElementById('projectDesc').value.trim();
+      const tableText = document.getElementById('projectTableText').value.trim();
+      const fileInput = document.getElementById('projectFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      const tx = db.transaction('projects', 'readwrite');
+      const store = tx.objectStore('projects');
+      store.get(currentProjectId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        item.detailTitle = detailTitle;
+        item.author = author;
+        item.link = link;
+        item.description = description;
+        item.tableText = tableText;
+        item.date = new Date().toLocaleDateString();
+        item.modifiedAt = getNowStamp();
+        if (newFile) {
+          item.fileName = newFile.name;
+          item.fileBlob = newFile;
+        }
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        alert('저장되었습니다.');
+        renderProjectRooms();
+        openProjectRoom(currentProjectId);
+      };
+    }
+
+    function saveBylawDetail() {
+      if (!currentBylawRoomId) { alert('먼저 회칙 방을 선택하세요.'); return; }
+      const detailTitle = document.getElementById('bylawInnerTitle').value.trim();
+      const link = document.getElementById('bylawLink').value.trim();
+      const description = document.getElementById('bylawDesc').value.trim();
+      const tableText = document.getElementById('bylawTableText').value.trim();
+      const fileInput = document.getElementById('bylawFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      const tx = db.transaction('bylawRooms', 'readwrite');
+      const store = tx.objectStore('bylawRooms');
+      store.get(currentBylawRoomId).onsuccess = function(e) {
+        const item = e.target.result;
+        if (!item) return;
+        item.detailTitle = detailTitle;
+        item.link = link;
+        item.description = description;
+        item.tableText = tableText;
+        item.date = new Date().toLocaleDateString();
+        item.modifiedAt = getNowStamp();
+        if (newFile) {
+          item.fileName = newFile.name;
+          item.fileBlob = newFile;
+        }
+        store.put(item);
+      };
+      tx.oncomplete = function() {
+        alert('저장되었습니다.');
+        renderBylawRooms();
+        openBylawRoom(currentBylawRoomId);
+      };
+    }
+
+    function addMemberProfileBox() {
+      const input = document.getElementById('memberProfileNameInput');
+      const name = input.value.trim();
+      if (!name) { alert('이름을 입력하세요.'); return; }
+      const tx = db.transaction('memberProfiles', 'readwrite');
+      const store = tx.objectStore('memberProfiles');
+      store.getAll().onsuccess = function(e) {
+        const rows = e.target.result || [];
+        if (rows.some(row => (row.memberName || '').trim() === name)) {
+          alert('이미 있는 이름 상자입니다.');
+          return;
+        }
+        const req = store.add({ memberName: name, text: '', fileName: '', fileBlob: null, createdAt: getNowStamp(), modifiedAt: getNowStamp() });
+        req.onsuccess = function(ev) {
+          currentProfileMemberKey = String(ev.target.result);
+          currentProfileMemberName = name;
+        };
+      };
+      tx.oncomplete = function() {
+        input.value = '';
+        renderMemberProfileRoom();
+        if (currentProfileMemberKey) openMemberProfile(currentProfileMemberKey, currentProfileMemberName);
+      };
+    }
+
+    function renderMemberProfileRoom() {
+      const container = document.getElementById('memberProfileRoomContainer');
+      if (!container || !db) return;
+      container.innerHTML = '';
+      const tx = db.transaction('memberProfiles', 'readonly');
+      tx.objectStore('memberProfiles').getAll().onsuccess = function(e) {
+        const rows = (e.target.result || []).sort((a, b) => String(a.memberName || '').localeCompare(String(b.memberName || '')));
+        if (!rows.length) {
+          container.innerHTML = '<div class="small-guide">아직 만든 이름 상자가 없습니다. 위에서 이름을 먼저 추가하세요.</div>';
+          return;
+        }
+        rows.forEach((row) => {
+          const profileId = String(row.id);
+          const profileName = row.memberName || '이름없음';
+          const box = document.createElement('div');
+          box.className = 'room-box simple-room-box';
+          box.innerHTML = `<div class="room-header" style="background:#16a085;">${esc(profileName)}</div>`;
+          box.onclick = () => openMemberProfile(profileId, profileName);
+          container.appendChild(box);
+        });
+      };
+    }
+
+    function closeMemberProfileDetail() {
+      const panel = document.getElementById('memberProfileDetailPanel');
+      if (panel) panel.style.display = 'none';
+      currentProfileMemberKey = '';
+      currentProfileMemberName = '';
+    }
+
+    function openMemberProfile(memberKey, memberName) {
+      currentProfileMemberKey = String(memberKey);
+      currentProfileMemberName = memberName;
+      document.getElementById('memberProfileDetailPanel').style.display = 'block';
+      document.getElementById('memberProfileDetailTitle').innerText = `${memberName} 프로필`;
+      const tx = db.transaction('memberProfiles', 'readonly');
+      tx.objectStore('memberProfiles').get(Number(memberKey)).onsuccess = function(e) {
+        const item = e.target.result;
+        document.getElementById('memberProfileText').value = item?.text || '';
+        document.getElementById('memberProfileFile').value = '';
+        document.getElementById('memberProfileStatusText').innerText = item ? '저장된 프로필입니다. 내용을 고치거나 새 파일을 선택해 다시 저장할 수 있습니다.' : '아직 저장된 프로필이 없습니다. 내용을 입력하고 파일을 올린 뒤 저장하세요.';
+        document.getElementById('memberProfileFileViewArea').innerHTML = item && item.fileBlob ? `<span class="file-tag">${esc(item.fileName || '첨부파일')}</span> <button class="action-btn" style="padding:4px 8px; font-size:11px;" onclick="viewCurrentMemberProfileFile()">파일보기</button><div class="small-guide" style="margin-top:6px;">새 파일을 선택해 저장하면 기존 파일이 교체됩니다.</div>` : '첨부파일 없음';
+      };
+    }
+
+    function viewCurrentMemberProfileFile() {
+      if (!currentProfileMemberKey) return;
+      const tx = db.transaction('memberProfiles', 'readonly');
+      tx.objectStore('memberProfiles').get(Number(currentProfileMemberKey)).onsuccess = function(e) {
+        const item = e.target.result;
+        if (item && item.fileBlob) openBlob(item.fileBlob);
+        else alert('첨부파일이 없습니다.');
+      };
+    }
+
+    function saveCurrentMemberProfile() {
+      if (!currentProfileMemberKey) { alert('먼저 이름 상자를 선택하세요.'); return; }
+      const textVal = document.getElementById('memberProfileText').value.trim();
+      const fileInput = document.getElementById('memberProfileFile');
+      const newFile = fileInput.files.length > 0 ? fileInput.files[0] : null;
+      const tx = db.transaction('memberProfiles', 'readwrite');
+      const store = tx.objectStore('memberProfiles');
+      store.get(Number(currentProfileMemberKey)).onsuccess = function(e) {
+        const existing = e.target.result;
+        if (!existing) return;
+        existing.memberName = currentProfileMemberName;
+        existing.text = textVal;
+        existing.modifiedAt = getNowStamp();
+        if (newFile) {
+          existing.fileName = newFile.name;
+          existing.fileBlob = newFile;
+        }
+        store.put(existing);
+      };
+      tx.oncomplete = function() {
+        alert('프로필이 저장되었습니다.');
+        renderMemberProfileRoom();
+        openMemberProfile(currentProfileMemberKey, currentProfileMemberName);
+      };
+    }
+
+    function deleteCurrentMemberProfile() {
+      if (!currentProfileMemberKey) { alert('먼저 이름 상자를 선택하세요.'); return; }
+      if (!confirm('이 이름 상자와 프로필을 삭제하시겠습니까?')) return;
+      const deletingId = Number(currentProfileMemberKey);
+      const tx = db.transaction('memberProfiles', 'readwrite');
+      tx.objectStore('memberProfiles').delete(deletingId);
+      tx.oncomplete = function() {
+        document.getElementById('memberProfileText').value = '';
+        document.getElementById('memberProfileFile').value = '';
+        document.getElementById('memberProfileStatusText').innerText = '이름 상자와 프로필이 삭제되었습니다. 필요하면 새 이름 상자를 다시 추가하세요.';
+        document.getElementById('memberProfileFileViewArea').innerHTML = '첨부파일 없음';
+        document.getElementById('memberProfileDetailPanel').style.display = 'none';
+        currentProfileMemberKey = '';
+        currentProfileMemberName = '';
+        renderMemberProfileRoom();
+        alert('프로필이 삭제되었습니다.');
+      };
+    }
+
+    async function saveMember() {
+      const editIndex = document.getElementById('memberEditIndex').value;
+      const name = document.getElementById('memberName').value.trim();
+      const userId = document.getElementById('memberUserId').value.trim();
+      const phone = document.getElementById('memberPhone').value.trim();
+      const email = document.getElementById('memberEmail').value.trim();
+      if (!name) { alert('이름을 입력하세요.'); return; }
+      const member = { name, userId, phone, email };
+      try {
+        if (supabaseClient) {
+          await saveMemberToSupabase(member, editIndex);
+          await loadMembersFromSupabase(false);
+        } else {
+          if (editIndex === '') memberListData.push(member);
+          else memberListData[Number(editIndex)] = member;
+          cacheMembersLocally();
+          renderMembers();
+          renderMemberProfileRoom();
+        }
+        resetMemberForm();
+        alert(editIndex === '' ? '회원이 저장되었습니다.' : '회원 정보가 수정되었습니다.');
+      } catch (err) {
+        console.error('Member save failed:', err);
+        alert('회원 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    }
+
+    async function deleteMember(index) {
+      if (!confirm('이 회원 정보를 삭제하시겠습니까?')) return;
+      try {
+        if (supabaseClient) {
+          await deleteMemberFromSupabase(index);
+          await loadMembersFromSupabase(false);
+        } else {
+          memberListData.splice(index, 1);
+          cacheMembersLocally();
+          renderMembers();
+          renderMemberProfileRoom();
+        }
+        resetMemberForm();
+        alert('회원 정보가 삭제되었습니다.');
+      } catch (err) {
+        console.error('Member delete failed:', err);
+        alert('회원 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    }
+
+    function renderAdminRoom() {
+      adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
+      masterAdminPassword = localStorage.getItem('masterAdminPassword') || '';
+      document.getElementById('adminPasswordSetupBox').style.display = 'none';
+      document.getElementById('adminPasswordLoginBox').style.display = 'none';
+      document.getElementById('adminControlBox').style.display = 'none';
+      document.getElementById('masterAdminSetupBox').style.display = 'none';
+      document.getElementById('masterAdminLoginBox').style.display = 'none';
+      document.getElementById('masterAdminControlBox').style.display = 'none';
+      if (!adminRoomPassword) document.getElementById('adminPasswordSetupBox').style.display = 'block';
+      else if (!isAdminAuthenticated) document.getElementById('adminPasswordLoginBox').style.display = 'block';
+      else {
+        document.getElementById('adminControlBox').style.display = 'block';
+        renderAdminCategories();
+        renderMemberProfileRoom();
+      }
+      if (!masterAdminPassword) document.getElementById('masterAdminSetupBox').style.display = 'block';
+      else if (!isMasterAdminAuthenticated) document.getElementById('masterAdminLoginBox').style.display = 'block';
+      else document.getElementById('masterAdminControlBox').style.display = 'block';
+    }
+
+    async function collectRawBackupData() {
+      return {
+        exportedAt: getNowStamp(),
+        localStorageData: {
+          eventsData: localStorage.getItem('eventsData') || '{}',
+          memberListData: localStorage.getItem('memberListData') || '[]',
+          rentalData: localStorage.getItem('rentalData') || '[]',
+          adminRoomPassword: localStorage.getItem('adminRoomPassword') || '',
+          rentalRoomPassword: localStorage.getItem('rentalRoomPassword') || '',
+          masterAdminPassword: localStorage.getItem('masterAdminPassword') || '',
+          assetCategoryColors: localStorage.getItem('assetCategoryColors') || '{}'
+        },
+        indexedDB: {
+          activities: await getStoreDataPromise('activities'),
+          assets: await getStoreDataPromise('assets'),
+          meetingDocs: await getStoreDataPromise('meetingDocs'),
+          ideaRooms: await getStoreDataPromise('ideaRooms'),
+          ideaPosts: await getStoreDataPromise('ideaPosts'),
+          projects: await getStoreDataPromise('projects'),
+          adminRooms: await getStoreDataPromise('adminRooms'),
+          bylawRooms: await getStoreDataPromise('bylawRooms'),
+          memberProfiles: await getStoreDataPromise('memberProfiles')
+        }
+      };
+    }
+
+    async function collectSerializableBackupData() {
+      const raw = await collectRawBackupData();
+      const serialized = {
+        version: 'v11-minimal',
+        exportedAt: raw.exportedAt,
+        localStorageData: raw.localStorageData,
+        indexedDB: {}
+      };
+      for (const [storeName, records] of Object.entries(raw.indexedDB)) {
+        serialized.indexedDB[storeName] = [];
+        for (const record of records) serialized.indexedDB[storeName].push(await serializeRecord(record));
+      }
+      return serialized;
+    }
+
+    async function applyRawBackupData(data) {
+      const localData = data.localStorageData || {};
+      localStorage.setItem('eventsData', localData.eventsData || '{}');
+      localStorage.setItem('memberListData', localData.memberListData || '[]');
+      localStorage.setItem('rentalData', localData.rentalData || '[]');
+      localStorage.setItem('adminRoomPassword', localData.adminRoomPassword || '');
+      localStorage.setItem('rentalRoomPassword', localData.rentalRoomPassword || '');
+      localStorage.setItem('masterAdminPassword', localData.masterAdminPassword || '');
+      localStorage.setItem('assetCategoryColors', localData.assetCategoryColors || '{}');
+      eventsData = JSON.parse(localStorage.getItem('eventsData') || '{}');
+      memberListData = JSON.parse(localStorage.getItem('memberListData') || '[]');
+      rentalData = JSON.parse(localStorage.getItem('rentalData') || '[]');
+      adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
+      rentalRoomPassword = localStorage.getItem('rentalRoomPassword') || '';
+      masterAdminPassword = localStorage.getItem('masterAdminPassword') || '';
+      assetCategoryColors = JSON.parse(localStorage.getItem('assetCategoryColors') || '{}');
+      isAdminAuthenticated = false;
+      isRentalAuthenticated = false;
+      isMasterAdminAuthenticated = false;
+      const targets = ['activities','assets','meetingDocs','ideaRooms','ideaPosts','projects','adminRooms','bylawRooms','memberProfiles'];
+      for (const name of targets) await clearStorePromise(name);
+      for (const name of targets) {
+        const rows = (data.indexedDB && data.indexedDB[name]) ? data.indexedDB[name].map(reviveRecord) : [];
+        await addRecordsPromise(name, rows);
+      }
+      renderCalendar();
+      renderMembers();
+      renderActivityYearRooms();
+      renderAssetCategories();
+      renderIdeaRooms();
+      renderProjectRooms();
+      renderBylawRooms();
+      renderAdminCategories();
+      renderMemberProfileRoom();
+      renderAdminRoom();
+      renderRentalRoom();
+      renderMeetingDocs('rules');
+      updateBackupStatus(`복원 완료: ${getNowStamp()}`);
+    }
+
+
+        const autoBackupWrappedFunctions = ['saveMember','deleteMember','saveIdeaPost','deleteIdeaPost','deleteCurrentIdeaPost','saveCurrentMemberProfile','deleteCurrentMemberProfile','saveCurrentAssetCategoryColor','addIdeaRoom','deleteCurrentIdeaRoom','saveProjectDetail','deleteCurrentProjectRoom','addProjectRoom','saveBylawDetail','deleteCurrentBylawRoom','addBylawRoom','setAdminPassword','changeAdminPassword','setRentalPassword','changeRentalPassword','resetAdminPasswordByMaster','resetRentalPasswordByMaster','setMasterAdminPassword','changeMasterAdminPassword','addRentalEntry','saveRentalRow','deleteRentalRow','saveMeetingDoc','deleteMeetingDoc','saveAdminCategory','saveAdminCategoryDetail','deleteCurrentAdminCategory'];
+    autoBackupWrappedFunctions.forEach(fnName => {
+      const originalFn = window[fnName];
+      if (typeof originalFn === 'function') {
+        window[fnName] = function(...args) {
+          const result = originalFn.apply(this, args);
+          setTimeout(() => saveAutoBackupSnapshot(`${fnName} 실행 후 자동백업`), 900);
+          return result;
+        };
+      }
+    });
+
+    window.onload = async function() {
+      renderCalendar();
+      renderMembers();
+      renderAdminRoom();
+      renderRentalRoom();
+      await loadMembersFromSupabase(false);
+      await loadRentalsFromSupabase(false).catch(function(){});
+      if (memberSyncTimer) clearInterval(memberSyncTimer);
+      memberSyncTimer = setInterval(() => {
+        loadMembersFromSupabase(false);
+      }, 8000);
+      if (rentalSyncTimer) clearInterval(rentalSyncTimer);
+      rentalSyncTimer = setInterval(() => {
+        loadRentalsFromSupabase(false);
+      }, 8000);
+      setTimeout(() => saveAutoBackupSnapshot('페이지 열기 자동백업'), 1500);
+      setInterval(() => saveAutoBackupSnapshot('주기 자동백업'), 300000);
+    };
+  </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+</body>
+</html>
