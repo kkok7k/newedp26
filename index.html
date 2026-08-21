@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>뉴엔돌핀 모임 대시보드 v8fresh</title>
+  <title>뉴엔돌핀 모임 대시보드 v9-errshow</title>
   <style>
     :root {
       --primary-color: #2c3e50;
@@ -561,7 +561,8 @@
       </div>
 
       <p class="small-guide">* 대여 등록은 회원도 가능하며, <b>반납일 / 대여비 완납 / 삭제</b>는 대여 담당자 비밀번호로만 처리되게 만들었습니다. 비밀번호를 잊었을 때는 회원 모임관리 > 관리자방의 <b>최고관리자 재설정 모드</b>에서 새로 바꿀 수 있습니다.</p>
-      <div style="overflow-x:auto;">
+      <div id="rentalDeleteStatus" style="margin:8px 0; font-size:13px; color:#c0392b;"></div>
+        <div style="overflow-x:auto;">
         <table id="rentalTable">
           <thead>
             <tr><th>품목</th><th>대여자</th><th>대여일</th><th>반납일</th><th>대여비완납</th><th>기타</th><th>저장/관리</th></tr>
@@ -2165,6 +2166,9 @@
         } catch (cloudErr) {
           rentalQueuePending(newRow);
           console.warn('cloud sync queued:', cloudErr);
+          var msg = (cloudErr && cloudErr.message) ? cloudErr.message : String(cloudErr);
+          if (statusEl) statusEl.textContent = '⚠️ 서버 동기화 실패: ' + msg;
+          try { window.alert('서버 저장 실패: ' + msg); } catch(_){}
         }
 
         // 3) Clear inputs and show success on screen.
@@ -2248,7 +2252,9 @@
 
     async function deleteRentalRow(index) {
       if (!isRentalAuthenticated) {
-        alert('삭제는 대여 담당자만 할 수 있습니다.');
+        var st = document.getElementById('rentalDeleteStatus');
+        if (st) st.textContent = '⚠️ 삭제: 대여 담당자 모드로 먼저 로그인하세요 (위 대여방 비밀번호).';
+        alert('삭제는 대여 담당자만 할 수 있습니다.\n\n위쪽의 "대여담당자 입장" 으로 먼저 로그인하세요.');
         return;
       }
       if (!confirm('이 대여 기록을 삭제하시겠습니까?')) return;
@@ -2280,7 +2286,10 @@
         }
       } catch (err) {
         console.error('Rental delete failed:', err);
-        alert('대여 기록 삭제 중 오류: ' + (err && err.message ? err.message : err));
+        var msg = (err && err.message) ? err.message : String(err);
+        var st = document.getElementById('rentalDeleteStatus');
+        if (st) st.textContent = '⚠️ 삭제 실패: ' + msg;
+        alert('삭제 실패: ' + msg + '\n\n(서버 권한 문제면 Supabase → SQL Editor 에서 anon DELETE 정책이 있는지 확인)');
       }
     }
 
@@ -3967,6 +3976,7 @@
       setInterval(() => saveAutoBackupSnapshot('주기 자동백업'), 300000);
     };
   </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
