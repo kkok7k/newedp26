@@ -550,12 +550,13 @@
 
       <div class="soft-panel">
         <h4 style="margin:0 0 10px 0; color:#2c3e50;">새 대여 등록</h4>
+        <div id="rentalSubmitStatus" style="margin:6px 0 0; font-size:13px; color:#2c3e50;"></div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:8px; align-items:center;">
           <input type="text" id="rentalItem" placeholder="품목명">
           <input type="text" id="rentalBorrower" placeholder="대여자 이름">
           <input type="date" id="rentalDate">
           <input type="text" id="rentalNote" placeholder="기타 메모">
-          <button class="action-btn" style="margin:0;" onclick="addRentalEntry()">+ 대여 등록</button>
+          <button id="rentalSubmitBtn" type="button" class="action-btn" style="margin:0;" onclick="addRentalEntry(event)">+ 대여 등록</button>
         </div>
       </div>
 
@@ -2094,48 +2095,90 @@
       renderRentalRoom();
     }
 
-    async function addRentalEntry() {
-      const item = document.getElementById('rentalItem').value.trim();
-      const borrower = document.getElementById('rentalBorrower').value.trim();
-      const rentDate = document.getElementById('rentalDate').value;
-      const note = document.getElementById('rentalNote').value.trim();
-      if (!item) { alert('품목명을 입력하세요.'); return; }
-      const newRow = { item, borrower, rentDate, returnDate: '', feeStatus: '', note };
-
+    async function addRentalEntry(ev) {
+      if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+      var statusEl = document.getElementById('rentalSubmitStatus');
       try {
-        const client = supabaseClient || await ensureSupabaseReady(10000);
-        if (client) {
-          const payload = {
-            item: newRow.item, borrower: newRow.borrower,
-            rent_date: newRow.rentDate || null,
-            return_date: null, fee_status: '', note: newRow.note
-          };
-          const { data, error } = await client.from('rentals').insert(payload).select('*').single();
-          if (error) throw error;
-          newRow.id = data.id;
+        var item = (document.getElementById('rentalItem').value || '').trim();
+        var borrower = (document.getElementById('rentalBorrower').value || '').trim();
+        var rentDate = document.getElementById('rentalDate').value || '';
+        var note = (document.getElementById('rentalNote').value || '').trim();
+        if (!item) {
+          if (statusEl) statusEl.textContent = '⚠️ 품목명을 입력하세요.';
+          if (window.alert) window.alert('품목명을 입력하세요.');
+          return;
+        }
+        if (statusEl) statusEl.textContent = '⏳ 등록하는 중…';
+
+        var newRow = { item: item, borrower: borrower, rentDate: rentDate,
+                       returnDate: '', feeStatus: '', note: note };
+
+        // 1) Save locally IMMEDIATELY so the row shows up on this device even on slow networks.
+        try {
           rentalData.push(newRow);
           cacheRentalsLocally();
           renderRentalRows();
-        } else {
-          rentalData.push(newRow);
-          saveRentalData();
-          rentalQueuePending(newRow);
-          renderRentalRows();
+        } catch (localErr) {
+          console.error('local save failed:', localErr);
         }
-      } catch (err) {
-        // 실패해도 로컬에는 남긴 뒤 다음 동기화 때 재시도 큐에 보관
-        rentalData.push(newRow);
-        cacheRentalsLocally();
-        rentalQueuePending(newRow);
-        renderRentalRows();
-        console.error('Rental insert failed:', err);
-      }
 
-      document.getElementById('rentalItem').value = '';
-      document.getElementById('rentalBorrower').value = '';
-      document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('rentalNote').value = '';
+        // 2) Try cloud with a SHORT timeout (don't block the UI for 10s on mobile).
+        var cloudOk = false;
+        try {
+          var client = window.supabaseClient;
+          if (!client && window.supabase && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+            client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+            window.supabaseClient = client;
+            supabaseClient = client;
+          }
+          if (client) {
+            var payload = {
+              item: newRow.item, borrower: newRow.borrower,
+              rent_date: newRow.rentDate || null,
+              return_date: null, fee_status: '', note: newRow.note
+            };
+            var insRes = await Promise.race([
+              client.from('rentals').insert(payload).select('*').single(),
+              new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('cloud timeout')); }, 4000); })
+            ]);
+            var data = insRes && insRes.data, error = insRes && insRes.error;
+            if (!error && data && data.id) {
+              newRow.id = data.id;
+              // update local copy with cloud id (last pushed on top, find it)
+              for (var i = rentalData.length - 1; i >= 0; i--) {
+                if (rentalData[i] && rentalData[i].item === newRow.item &&
+                    rentalData[i].borrower === newRow.borrower &&
+                    (!rentalData[i].id)) {
+                  rentalData[i].id = data.id;
+                  break;
+                }
+              }
+              cacheRentalsLocally();
+              renderRentalRows();
+              cloudOk = true;
+            } else if (error) {
+              rentalQueuePending(newRow);
+            }
+          } else {
+            rentalQueuePending(newRow);
+          }
+        } catch (cloudErr) {
+          rentalQueuePending(newRow);
+          console.warn('cloud sync queued:', cloudErr);
+        }
+
+        // 3) Clear inputs and show success on screen.
+        document.getElementById('rentalItem').value = '';
+        document.getElementById('rentalBorrower').value = '';
+        try { document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10); } catch (e) {}
+        document.getElementById('rentalNote').value = '';
+        if (statusEl) statusEl.textContent = cloudOk ? '✅ 등록 완료 (서버 동기화됨)' : '✅ 등록 완료 (잠시 후 서버에 동기화됩니다)';
+      } catch (fatalErr) {
+        if (statusEl) statusEl.textContent = '⚠️ 오류: ' + (fatalErr && fatalErr.message ? fatalErr.message : fatalErr);
+        console.error('addRentalEntry fatal:', fatalErr);
+      }
     }
+
 
     function addRentalRow() {
       addRentalEntry();
@@ -3895,6 +3938,17 @@
     });
 
     window.onload = async function() {
+    // 모바일 견고화: 등록 버튼에 addEventListener 백업 바인딩 (인라인 onclick 누락 방지)
+    try {
+      var _rsb = document.getElementById('rentalSubmitBtn');
+      if (_rsb && !_rsb._rentalBound) {
+        _rsb._rentalBound = true;
+        _rsb.addEventListener('click', function(e){ addRentalEntry(e); });
+        _rsb.addEventListener('touchend', function(e){ e.preventDefault(); addRentalEntry(e); }, { passive: false });
+      }
+    } catch (_e) { console.warn('rental bind err:', _e); }
+
+
       renderCalendar();
       renderMembers();
       renderAdminRoom();
@@ -3913,6 +3967,7 @@
       setInterval(() => saveAutoBackupSnapshot('주기 자동백업'), 300000);
     };
   </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
 </html>
