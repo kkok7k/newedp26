@@ -1131,36 +1131,125 @@
       localStorage.setItem('rentalData', JSON.stringify(rentalData));
     }
 
+    function rentalHasStableId(row) {
+      return row && typeof row.id === 'number' && row.id > 0;
+    }
+
+    async function ensureSupabaseReady(maxWaitMs = 10000) {
+      if (supabaseClient) return supabaseClient;
+      const start = Date.now();
+      while (Date.now() - start < maxWaitMs) {
+        await new Promise(r => setTimeout(r, 250));
+        if (window.supabase && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+          try {
+            const c = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+            supabaseClient = c;
+            window.supabaseClient = c;
+            return supabaseClient;
+          } catch (e) { console.error('late supabase init failed:', e); }
+        }
+      }
+      return null;
+    }
+
+    function rentalQueuePending(row) {
+      const q = JSON.parse(localStorage.getItem('rentalPending') || '[]');
+      q.push({ ...row, __queued: 1 });
+      localStorage.setItem('rentalPending', JSON.stringify(q));
+    }
+
+    function rentalDrainPending() {
+      const q = JSON.parse(localStorage.getItem('rentalPending') || '[]');
+      const out = [];
+      q.forEach(r => { const { __queued, ...clean } = r; out.push(clean); });
+      return out;
+    }
+
+    function rentalClearPendingIfSynced(ids) {
+      const q = JSON.parse(localStorage.getItem('rentalPending') || '[]');
+      const remaining = q.filter(r => !ids.includes(r.__id));
+      if (remaining.length === 0) localStorage.removeItem('rentalPending');
+      else localStorage.setItem('rentalPending', JSON.stringify(remaining));
+    }
+
     async function loadRentalsFromSupabase(showError) {
-      if (!supabaseClient) {
+      const client = supabaseClient || await ensureSupabaseReady(8000);
+      if (!client) {
         renderRentalRows();
         return false;
       }
       try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await client
           .from('rentals')
           .select('id, item, borrower, rent_date, return_date, fee_status, note, created_at')
           .order('id', { ascending: true });
         if (error) throw error;
-        rentalData = (data || []).map(row => ({
-          id: row.id,
-          item: row.item || '',
-          borrower: row.borrower || '',
-          rentDate: row.rent_date || '',
-          returnDate: row.return_date || '',
-          feeStatus: row.fee_status || '',
-          note: row.note || '',
-          created_at: row.created_at || ''
-        }));
+
+        // MERGE: 다른 기기 데이터는 보존, 같은 id 는 클라우드 값으로 갱신,
+        //        id 없는 로컬-only 행은 그대로 유지.
+        const cloudById = {};
+        (data || []).forEach(row => {
+          cloudById[row.id] = {
+            id: row.id,
+            item: row.item || '',
+            borrower: row.borrower || '',
+            rentDate: row.rent_date || '',
+            returnDate: row.return_date || '',
+            feeStatus: row.fee_status || '',
+            note: row.note || '',
+            created_at: row.created_at || ''
+          };
+        });
+
+        const seen = new Set();
+        const merged = [];
+        rentalData.forEach(local => {
+          if (local.id && cloudById[local.id]) {
+            merged.push(cloudById[local.id]);
+            seen.add(local.id);
+          } else if (!local.id) {
+            merged.push(local);
+          }
+          // else: local.has(id) && !cloud.has(id) → 다른 기기에서 삭제됨 → 버림
+        });
+        Object.values(cloudById).forEach(row => {
+          if (!seen.has(row.id)) merged.push(row);
+        });
+
+        rentalData = merged;
         cacheRentalsLocally();
         renderRentalRows();
+        await rentalFlushPending().catch(() => {});
         return true;
       } catch (err) {
         console.error('Supabase rentals load failed:', err);
-        if (showError) alert('공용 대여장을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        if (showError) alert('공용 대여장을 불러오지 못했습니다: ' + (err && err.message ? err.message : err));
         renderRentalRows();
         return false;
       }
+    }
+
+    async function rentalFlushPending() {
+      const client = supabaseClient || await ensureSupabaseReady(8000);
+      if (!client) return;
+      const pending = rentalDrainPending();
+      if (!pending.length) return;
+      const syncedIds = [];
+      for (const row of pending) {
+        try {
+          const payload = {
+            item: row.item || '', borrower: row.borrower || '',
+            rent_date: row.rentDate || null,
+            return_date: row.returnDate || null,
+            fee_status: row.feeStatus || '',
+            note: row.note || ''
+          };
+          const { data, error } = await client.from('rentals').insert(payload).select('id').single();
+          if (error) throw error;
+          if (data && data.id) syncedIds.push(data.id);
+        } catch (e) { console.warn('pending flush failed', e); }
+      }
+      if (syncedIds.length) await loadRentalsFromSupabase(false).catch(() => {});
     }
 
     async function saveRentalToSupabase(row, editIndex) {
@@ -2008,31 +2097,41 @@
       const rentDate = document.getElementById('rentalDate').value;
       const note = document.getElementById('rentalNote').value.trim();
       if (!item) { alert('품목명을 입력하세요.'); return; }
-      const newRow = {
-        item,
-        borrower,
-        rentDate,
-        returnDate: '',
-        feeStatus: '',
-        note
-      };
+      const newRow = { item, borrower, rentDate, returnDate: '', feeStatus: '', note };
+
       try {
-        if (supabaseClient) {
-          await saveRentalToSupabase(newRow, '');
-          await loadRentalsFromSupabase(false);
+        const client = supabaseClient || await ensureSupabaseReady(10000);
+        if (client) {
+          const payload = {
+            item: newRow.item, borrower: newRow.borrower,
+            rent_date: newRow.rentDate || null,
+            return_date: null, fee_status: '', note: newRow.note
+          };
+          const { data, error } = await client.from('rentals').insert(payload).select('*').single();
+          if (error) throw error;
+          newRow.id = data.id;
+          rentalData.push(newRow);
+          cacheRentalsLocally();
+          renderRentalRows();
         } else {
           rentalData.push(newRow);
           saveRentalData();
+          rentalQueuePending(newRow);
+          renderRentalRows();
         }
-        document.getElementById('rentalItem').value = '';
-        document.getElementById('rentalBorrower').value = '';
-        document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
-        document.getElementById('rentalNote').value = '';
-        renderRentalRows();
       } catch (err) {
+        // 실패해도 로컬에는 남긴 뒤 다음 동기화 때 재시도 큐에 보관
+        rentalData.push(newRow);
+        cacheRentalsLocally();
+        rentalQueuePending(newRow);
+        renderRentalRows();
         console.error('Rental insert failed:', err);
-        alert('대여 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
       }
+
+      document.getElementById('rentalItem').value = '';
+      document.getElementById('rentalBorrower').value = '';
+      document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('rentalNote').value = '';
     }
 
     function addRentalRow() {
@@ -2040,14 +2139,15 @@
     }
 
     async function saveRentalRow(index) {
-      const itemInput = document.getElementById(`rentalItem_${index}`);
-      const borrowerInput = document.getElementById(`rentalBorrower_${index}`);
-      const rentDateInput = document.getElementById(`rentalRentDate_${index}`);
-      const returnDateInput = document.getElementById(`rentalReturnDate_${index}`);
-      const feeStatusInput = document.getElementById(`rentalFeeStatus_${index}`);
-      const noteInput = document.getElementById(`rentalNote_${index}`);
+      const idx = Number(index);
+      const itemInput = document.getElementById(`rentalItem_${idx}`);
+      const borrowerInput = document.getElementById(`rentalBorrower_${idx}`);
+      const rentDateInput = document.getElementById(`rentalRentDate_${idx}`);
+      const returnDateInput = document.getElementById(`rentalReturnDate_${idx}`);
+      const feeStatusInput = document.getElementById(`rentalFeeStatus_${idx}`);
+      const noteInput = document.getElementById(`rentalNote_${idx}`);
       const updatedRow = {
-        ...rentalData[index],
+        ...(rentalData[idx] || {}),
         item: itemInput.value.trim(),
         borrower: borrowerInput.value.trim(),
         rentDate: rentDateInput.value,
@@ -2058,18 +2158,45 @@
         updatedRow.feeStatus = feeStatusInput.value;
       }
       try {
-        if (supabaseClient) {
-          await saveRentalToSupabase(updatedRow, String(index));
-          await loadRentalsFromSupabase(false);
-        } else {
-          rentalData[index] = updatedRow;
-          saveRentalData();
+        const client = supabaseClient || await ensureSupabaseReady(10000);
+        if (client) {
+          if (rentalHasStableId(rentalData[idx])) {
+            const payload = {
+              item: updatedRow.item, borrower: updatedRow.borrower,
+              rent_date: updatedRow.rentDate || null,
+              return_date: updatedRow.returnDate || null,
+              fee_status: updatedRow.feeStatus || '',
+              note: updatedRow.note || ''
+            };
+            const { error } = await client.from('rentals')
+              .update(payload).eq('id', rentalData[idx].id);
+            if (error) throw error;
+            updatedRow.id = rentalData[idx].id;
+          } else {
+            // 클라우드 미동기화된 로컬 행: insert 시도, 실패하면 큐에 보관
+            const payload = {
+              item: updatedRow.item, borrower: updatedRow.borrower,
+              rent_date: updatedRow.rentDate || null,
+              return_date: updatedRow.returnDate || null,
+              fee_status: updatedRow.feeStatus || '',
+              note: updatedRow.note || ''
+            };
+            const { data, error } = await client.from('rentals').insert(payload).select('id').single();
+            if (error) throw error;
+            updatedRow.id = data.id;
+          }
         }
-        alert('대여 기록이 저장되었습니다.');
+        rentalData[idx] = updatedRow;
+        cacheRentalsLocally();
         renderRentalRows();
+        alert('대여 기록이 저장되었습니다.');
       } catch (err) {
+        // 클라우드 실패해도 로컬은 갱신, 다음 동기화 시 재시도
+        rentalData[idx] = updatedRow;
+        cacheRentalsLocally();
+        renderRentalRows();
         console.error('Rental save failed:', err);
-        alert('대여 기록 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+        alert('대여 기록 저장 중 오류: ' + (err && err.message ? err.message : err));
       }
     }
 
@@ -2079,18 +2206,35 @@
         return;
       }
       if (!confirm('이 대여 기록을 삭제하시겠습니까?')) return;
-      try {
-        if (supabaseClient) {
-          await deleteRentalFromSupabase(index);
-          await loadRentalsFromSupabase(false);
-        } else {
-          rentalData.splice(index, 1);
-          saveRentalData();
-        }
+      const idx = Number(index);
+      const target = rentalData[idx];
+      const pullLocal = () => {
+        rentalData.splice(idx, 1);
+        cacheRentalsLocally();
         renderRentalRows();
+      };
+      try {
+        const client = supabaseClient || await ensureSupabaseReady(10000);
+        if (client) {
+          let q = client.from('rentals').delete();
+          if (rentalHasStableId(target)) {
+            q = q.eq('id', target.id);
+          } else {
+            // id 없는 로컬 행: 내용 매칭으로 시도
+            if (target.item) q = q.eq('item', target.item);
+            if (target.borrower) q = q.eq('borrower', target.borrower);
+            if (target.rentDate) q = q.eq('rent_date', target.rentDate);
+          }
+          const { error } = await q;
+          if (error) throw error;
+          pullLocal();
+          await loadRentalsFromSupabase(false).catch(() => {});
+        } else {
+          pullLocal();
+        }
       } catch (err) {
         console.error('Rental delete failed:', err);
-        alert('대여 기록 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+        alert('대여 기록 삭제 중 오류: ' + (err && err.message ? err.message : err));
       }
     }
 
