@@ -1060,6 +1060,7 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
     let memberSyncTimer = null;
+    let rentalSyncTimer = null;
 
     function cacheMembersLocally() {
       localStorage.setItem('memberListData', JSON.stringify(memberListData));
@@ -1126,6 +1127,73 @@
       if (error) throw error;
       return true;
     }
+    function cacheRentalsLocally() {
+      localStorage.setItem('rentalData', JSON.stringify(rentalData));
+    }
+
+    async function loadRentalsFromSupabase(showError) {
+      if (!supabaseClient) {
+        renderRentalRows();
+        return false;
+      }
+      try {
+        const { data, error } = await supabaseClient
+          .from('rentals')
+          .select('id, item, borrower, rent_date, return_date, fee_status, note, created_at')
+          .order('id', { ascending: true });
+        if (error) throw error;
+        rentalData = (data || []).map(row => ({
+          id: row.id,
+          item: row.item || '',
+          borrower: row.borrower || '',
+          rentDate: row.rent_date || '',
+          returnDate: row.return_date || '',
+          feeStatus: row.fee_status || '',
+          note: row.note || '',
+          created_at: row.created_at || ''
+        }));
+        cacheRentalsLocally();
+        renderRentalRows();
+        return true;
+      } catch (err) {
+        console.error('Supabase rentals load failed:', err);
+        if (showError) alert('공용 대여장을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        renderRentalRows();
+        return false;
+      }
+    }
+
+    async function saveRentalToSupabase(row, editIndex) {
+      if (!supabaseClient) return false;
+      const payload = {
+        item: row.item || '',
+        borrower: row.borrower || '',
+        rent_date: row.rentDate || null,
+        return_date: row.returnDate || null,
+        fee_status: row.feeStatus || '',
+        note: row.note || ''
+      };
+      let error = null;
+      if (editIndex === '') {
+        ({ error } = await supabaseClient.from('rentals').insert(payload));
+      } else {
+        const existing = rentalData[Number(editIndex)];
+        if (!existing || !existing.id) throw new Error('수정할 대여 기록의 공용 ID를 찾지 못했습니다.');
+        ({ error } = await supabaseClient.from('rentals').update(payload).eq('id', existing.id));
+      }
+      if (error) throw error;
+      return true;
+    }
+
+    async function deleteRentalFromSupabase(index) {
+      if (!supabaseClient) return false;
+      const existing = rentalData[index];
+      if (!existing || !existing.id) throw new Error('삭제할 대여 기록의 공용 ID를 찾지 못했습니다.');
+      const { error } = await supabaseClient.from('rentals').delete().eq('id', existing.id);
+      if (error) throw error;
+      return true;
+    }
+
     let assetCategoryColors = JSON.parse(localStorage.getItem('assetCategoryColors') || '{}');
     let rentalData = JSON.parse(localStorage.getItem('rentalData') || '[{"item":"노트북 거치대","borrower":"김경옥","rentDate":"2026-06-01","returnDate":"2026-06-15","feeStatus":"납입완료","note":"이상없음"}]');
     let adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
@@ -1934,61 +2002,96 @@
       renderRentalRoom();
     }
 
-    function addRentalEntry() {
+    async function addRentalEntry() {
       const item = document.getElementById('rentalItem').value.trim();
       const borrower = document.getElementById('rentalBorrower').value.trim();
       const rentDate = document.getElementById('rentalDate').value;
       const note = document.getElementById('rentalNote').value.trim();
       if (!item) { alert('품목명을 입력하세요.'); return; }
-      rentalData.push({
+      const newRow = {
         item,
         borrower,
         rentDate,
         returnDate: '',
         feeStatus: '',
         note
-      });
-      saveRentalData();
-      document.getElementById('rentalItem').value = '';
-      document.getElementById('rentalBorrower').value = '';
-      document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
-      document.getElementById('rentalNote').value = '';
-      renderRentalRows();
+      };
+      try {
+        if (supabaseClient) {
+          await saveRentalToSupabase(newRow, '');
+          await loadRentalsFromSupabase(false);
+        } else {
+          rentalData.push(newRow);
+          saveRentalData();
+        }
+        document.getElementById('rentalItem').value = '';
+        document.getElementById('rentalBorrower').value = '';
+        document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('rentalNote').value = '';
+        renderRentalRows();
+      } catch (err) {
+        console.error('Rental insert failed:', err);
+        alert('대여 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
     }
 
     function addRentalRow() {
       addRentalEntry();
     }
 
-    function saveRentalRow(index) {
+    async function saveRentalRow(index) {
       const itemInput = document.getElementById(`rentalItem_${index}`);
       const borrowerInput = document.getElementById(`rentalBorrower_${index}`);
       const rentDateInput = document.getElementById(`rentalRentDate_${index}`);
       const returnDateInput = document.getElementById(`rentalReturnDate_${index}`);
       const feeStatusInput = document.getElementById(`rentalFeeStatus_${index}`);
       const noteInput = document.getElementById(`rentalNote_${index}`);
-      rentalData[index].item = itemInput.value.trim();
-      rentalData[index].borrower = borrowerInput.value.trim();
-      rentalData[index].rentDate = rentDateInput.value;
-      rentalData[index].note = noteInput.value.trim();
+      const updatedRow = {
+        ...rentalData[index],
+        item: itemInput.value.trim(),
+        borrower: borrowerInput.value.trim(),
+        rentDate: rentDateInput.value,
+        note: noteInput.value.trim()
+      };
       if (isRentalAuthenticated) {
-        rentalData[index].returnDate = returnDateInput.value;
-        rentalData[index].feeStatus = feeStatusInput.value;
+        updatedRow.returnDate = returnDateInput.value;
+        updatedRow.feeStatus = feeStatusInput.value;
       }
-      saveRentalData();
-      alert('대여 기록이 저장되었습니다.');
-      renderRentalRows();
+      try {
+        if (supabaseClient) {
+          await saveRentalToSupabase(updatedRow, String(index));
+          await loadRentalsFromSupabase(false);
+        } else {
+          rentalData[index] = updatedRow;
+          saveRentalData();
+        }
+        alert('대여 기록이 저장되었습니다.');
+        renderRentalRows();
+      } catch (err) {
+        console.error('Rental save failed:', err);
+        alert('대여 기록 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
     }
 
-    function deleteRentalRow(index) {
+    async function deleteRentalRow(index) {
       if (!isRentalAuthenticated) {
         alert('삭제는 대여 담당자만 할 수 있습니다.');
         return;
       }
       if (!confirm('이 대여 기록을 삭제하시겠습니까?')) return;
-      rentalData.splice(index, 1);
-      saveRentalData();
-      renderRentalRows();
+      try {
+        if (supabaseClient) {
+          await deleteRentalFromSupabase(index);
+          await loadRentalsFromSupabase(false);
+        } else {
+          rentalData.splice(index, 1);
+          saveRentalData();
+        }
+        renderRentalRows();
+      } catch (err) {
+        console.error('Rental delete failed:', err);
+        alert('대여 기록 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
     }
 
     function renderRentalRows() {
@@ -3650,9 +3753,14 @@
       renderAdminRoom();
       renderRentalRoom();
       await loadMembersFromSupabase(false);
+      await loadRentalsFromSupabase(false);
       if (memberSyncTimer) clearInterval(memberSyncTimer);
       memberSyncTimer = setInterval(() => {
         loadMembersFromSupabase(false);
+      }, 8000);
+      if (rentalSyncTimer) clearInterval(rentalSyncTimer);
+      rentalSyncTimer = setInterval(() => {
+        loadRentalsFromSupabase(false);
       }, 8000);
       setTimeout(() => saveAutoBackupSnapshot('페이지 열기 자동백업'), 1500);
       setInterval(() => saveAutoBackupSnapshot('주기 자동백업'), 300000);
