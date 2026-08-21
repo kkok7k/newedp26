@@ -1036,7 +1036,8 @@
     </div>
   </div>
 
-  <script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
     let db;
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
@@ -1053,6 +1054,78 @@
     let currentProfileMemberName = '';
 
     let memberListData = JSON.parse(localStorage.getItem('memberListData')) || [];
+    const SUPABASE_URL = 'https://sidfpxdubxtpkhxunsdy.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_5wbKozmeacMCa5skEB2SHQ_c9nuoH5o';
+    const supabaseClient = (window.supabase && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+      : null;
+    let memberSyncTimer = null;
+
+    function cacheMembersLocally() {
+      localStorage.setItem('memberListData', JSON.stringify(memberListData));
+    }
+
+    async function loadMembersFromSupabase(showError) {
+      if (!supabaseClient) {
+        renderMembers();
+        renderMemberProfileRoom();
+        return false;
+      }
+      try {
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('id, name, user_id, phone, email, created_at')
+          .order('id', { ascending: true });
+        if (error) throw error;
+        memberListData = (data || []).map(row => ({
+          id: row.id,
+          name: row.name || '',
+          userId: row.user_id || '',
+          phone: row.phone || '',
+          email: row.email || '',
+          created_at: row.created_at || ''
+        }));
+        cacheMembersLocally();
+        renderMembers();
+        renderMemberProfileRoom();
+        return true;
+      } catch (err) {
+        console.error('Supabase members load failed:', err);
+        if (showError) alert('공용 회원명단을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        renderMembers();
+        renderMemberProfileRoom();
+        return false;
+      }
+    }
+
+    async function saveMemberToSupabase(member, editIndex) {
+      if (!supabaseClient) return false;
+      const payload = {
+        name: member.name || '',
+        user_id: member.userId || '',
+        phone: member.phone || '',
+        email: member.email || ''
+      };
+      let error = null;
+      if (editIndex === '') {
+        ({ error } = await supabaseClient.from('members').insert(payload));
+      } else {
+        const existing = memberListData[Number(editIndex)];
+        if (!existing || !existing.id) throw new Error('수정할 회원의 공용 ID를 찾지 못했습니다.');
+        ({ error } = await supabaseClient.from('members').update(payload).eq('id', existing.id));
+      }
+      if (error) throw error;
+      return true;
+    }
+
+    async function deleteMemberFromSupabase(index) {
+      if (!supabaseClient) return false;
+      const existing = memberListData[index];
+      if (!existing || !existing.id) throw new Error('삭제할 회원의 공용 ID를 찾지 못했습니다.');
+      const { error } = await supabaseClient.from('members').delete().eq('id', existing.id);
+      if (error) throw error;
+      return true;
+    }
     let assetCategoryColors = JSON.parse(localStorage.getItem('assetCategoryColors') || '{}');
     let rentalData = JSON.parse(localStorage.getItem('rentalData') || '[{"item":"노트북 거치대","borrower":"김경옥","rentDate":"2026-06-01","returnDate":"2026-06-15","feeStatus":"납입완료","note":"이상없음"}]');
     let adminRoomPassword = localStorage.getItem('adminRoomPassword') || '';
@@ -3409,7 +3482,7 @@
       };
     }
 
-    function saveMember() {
+    async function saveMember() {
       const editIndex = document.getElementById('memberEditIndex').value;
       const name = document.getElementById('memberName').value.trim();
       const userId = document.getElementById('memberUserId').value.trim();
@@ -3417,21 +3490,43 @@
       const email = document.getElementById('memberEmail').value.trim();
       if (!name) { alert('이름을 입력하세요.'); return; }
       const member = { name, userId, phone, email };
-      if (editIndex === '') memberListData.push(member);
-      else memberListData[Number(editIndex)] = member;
-      localStorage.setItem('memberListData', JSON.stringify(memberListData));
-      resetMemberForm();
-      renderMembers();
-      renderMemberProfileRoom();
+      try {
+        if (supabaseClient) {
+          await saveMemberToSupabase(member, editIndex);
+          await loadMembersFromSupabase(false);
+        } else {
+          if (editIndex === '') memberListData.push(member);
+          else memberListData[Number(editIndex)] = member;
+          cacheMembersLocally();
+          renderMembers();
+          renderMemberProfileRoom();
+        }
+        resetMemberForm();
+        alert(editIndex === '' ? '회원이 저장되었습니다.' : '회원 정보가 수정되었습니다.');
+      } catch (err) {
+        console.error('Member save failed:', err);
+        alert('회원 저장 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
     }
 
-    function deleteMember(index) {
+    async function deleteMember(index) {
       if (!confirm('이 회원 정보를 삭제하시겠습니까?')) return;
-      memberListData.splice(index, 1);
-      localStorage.setItem('memberListData', JSON.stringify(memberListData));
-      renderMembers();
-      renderMemberProfileRoom();
-      resetMemberForm();
+      try {
+        if (supabaseClient) {
+          await deleteMemberFromSupabase(index);
+          await loadMembersFromSupabase(false);
+        } else {
+          memberListData.splice(index, 1);
+          cacheMembersLocally();
+          renderMembers();
+          renderMemberProfileRoom();
+        }
+        resetMemberForm();
+        alert('회원 정보가 삭제되었습니다.');
+      } catch (err) {
+        console.error('Member delete failed:', err);
+        alert('회원 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
     }
 
     function renderAdminRoom() {
@@ -3549,11 +3644,16 @@
       }
     });
 
-    window.onload = function() {
+    window.onload = async function() {
       renderCalendar();
       renderMembers();
       renderAdminRoom();
       renderRentalRoom();
+      await loadMembersFromSupabase(false);
+      if (memberSyncTimer) clearInterval(memberSyncTimer);
+      memberSyncTimer = setInterval(() => {
+        loadMembersFromSupabase(false);
+      }, 8000);
       setTimeout(() => saveAutoBackupSnapshot('페이지 열기 자동백업'), 1500);
       setInterval(() => saveAutoBackupSnapshot('주기 자동백업'), 300000);
     };
