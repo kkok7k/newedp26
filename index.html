@@ -437,6 +437,31 @@
       .section-content { padding: 18px; }
       header { padding: 15px; }
     }
+  
+    /* =========================================================================
+       v13 모바일 읽기전용 (TODO: 나중에 모바일 쓰기 기능 다시 살릴 것)
+       ========================================================================= */
+    @media (max-width: 768px) {
+      /* 입력·폼·모든 쓰기 버튼 숨김 */
+      input, select, textarea,
+      form,
+      button { display: none !important; }
+      /* 내비 버튼만 보이게 */
+      .nav-btn { display: flex !important; }
+      /* 표는 그대로 보이게 */
+      table, th, td { display: table-cell !important; }
+      thead, tbody { display: table-row-group !important; }
+      tr { display: table-row !important; }
+      /* tel:·mailto:·네이버메일 링크는 살아 있게 */
+      a[href^="tel:"], a[href^="mailto:"], a[href*="mail.naver.com"] {
+        display: inline !important; pointer-events: auto !important;
+      }
+      /* 모바일 알림 배너 보임 */
+      #mobileReadonlyNote { display: block !important; }
+    }
+    @media (min-width: 769px) {
+      #mobileReadonlyNote { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -481,6 +506,10 @@
       <p class="small-guide" style="margin-top:8px;">* 지금 버전은 <b>자동 임시백업</b>을 이 웹 안에 저장하고, <b>전체 백업 다운로드</b>로 백업파일을 내려받아 보관할 수 있습니다. 구글드라이브 <b>자동 업로드</b>는 파일형 웹 한계로 완전 자동은 어렵고, 백업파일을 구글드라이브 폴더에 저장하는 방식이 가장 안전합니다.</p>
     </div>
 
+    
+    <div id="mobileReadonlyNote" style="display:none; margin:10px 20px; padding:12px 14px; background:#fff3cd; border:1px solid #ffeeba; border-radius:8px; color:#856404; font-size:13px; line-height:1.45;">
+      📱 <b>모바일은 조회 전용입니다.</b> 전화·메일 보내기는 가능하지만 데이터 추가·수정·삭제는 노트북(관리자 모드)에서 해주세요.
+    </div>
     <div id="calendar" class="section-content active">
       <div class="calendar-header-nav">
         <button class="action-btn" onclick="changeMonth(-1)">◀ 이전</button>
@@ -1041,7 +1070,29 @@
     </div>
   </div>
 
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=v8fresh"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=v8fresh">var __guardTargets = ['addRentalEntry', 'addRentalRow', 'saveRentalRow', 'deleteRentalRow', 'saveMember', 'deleteMember', 'addIdeaRoom', 'saveIdeaPost', 'deleteCurrentIdeaPost', 'editCurrentIdeaPost', 'addBylawRoom', 'saveBylawDetail', 'deleteCurrentBylawRoom', 'renameCurrentBylawRoom', 'addProjectRoom', 'saveProjectDetail', 'deleteCurrentProjectRoom', 'renameCurrentProjectRoom', 'addAssetCategory', 'addActivity', 'saveCurrentMemberProfile', 'deleteCurrentMemberProfile', 'saveAdminCategory', 'saveAdminCategoryDetail', 'deleteCurrentAdminCategory', 'saveMeetingDoc', 'deleteMeetingDoc', 'setRentalPassword', 'changeRentalPassword', 'loginRentalRoom', 'logoutRentalRoom', 'resetRentalPasswordByMaster', 'setAdminPassword', 'changeAdminPassword', 'loginAdminRoom', 'logoutAdminRoom', 'resetAdminPasswordByMaster', 'setMasterAdminPassword', 'changeMasterAdminPassword', 'loginMasterAdmin', 'saveCurrentAssetCategoryColor', 'downloadBackupFile', 'triggerRestoreBackupInput', 'restoreLatestAutoBackup', 'closeIdeaMediaPreview', 'addProjectTableRow', 'addProjectTableColumn', 'renameCurrentIdeaRoom', 'deleteCurrentIdeaRoom', 'saveCurrentIdeaRoomColor', 'refreshBylawPreview', 'addEvent', 'saveCurrentEvent', 'editEvent', 'deleteEvent'];
+
+    // === TODO: 모바일 쓰기 기능 다시 살리기 (v13에서는 모바일 read-only만 허용) ===
+    // 가드: 화면 폭 768 이하면 모든 쓰기 함수가 호출되어도 알림만 띄우고 즉시 종료
+    (function(){
+      function isMobile(){ return window.innerWidth <= 768; }
+      var mobileMsg = '📱 모바일은 조회 전용입니다.\n회원 전화·메일은 그대로 가능하고, 수정·등록·삭제는 노트북에서 해주세요.';
+      window.__mobileReadonly = true;
+      for (var i=0; i<__guardTargets.length; i++) {
+        (function(name){
+          var fn = window[name];
+          if (typeof fn !== 'function') return;
+          window[name] = function(){
+            if (isMobile()) {
+              try { window.alert(mobileMsg); } catch(_){}
+              return;
+            }
+            return fn.apply(this, arguments);
+          };
+        })(__guardTargets[i]);
+      }
+    })();
+</script>
 <script>
     let db;
     let currentYear = new Date().getFullYear();
@@ -3976,6 +4027,7 @@
       setInterval(() => saveAutoBackupSnapshot('주기 자동백업'), 300000);
     };
   </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
