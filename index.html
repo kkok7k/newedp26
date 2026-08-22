@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>뉴엔돌핀 모임 대시보드 v8fresh-errshow</title>
+  <title>뉴엔돌핀 모임 대시보드 v24-rental-pin-shared</title>
   <style>
     :root {
       --primary-color: #2c3e50;
@@ -1117,6 +1117,216 @@
     let memberSyncTimer = null;
     let rentalSyncTimer = null;
 
+    // ===== v22: 9개 테이블 통합 sync + Realtime push =====
+    let __v22_channels = [];
+    function __v22_isoNow() { return new Date().toISOString(); }
+
+    function __v22_mapRow(table, raw) {
+      if (!raw) return null;
+      if (table === 'activities')    return { id: raw.id, year: raw.year, month: raw.month, title: raw.title, date: raw.date, fileName: raw.fileName || '', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'idea_rooms')    return { id: raw.id, name: raw.name, color: raw.color || '#2980b9', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'admin_rooms')   return { id: raw.id, name: raw.name, content: raw.content || '', color: raw.color || '#2c3e50', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'bylaw_rooms')   return { id: raw.id, type: raw.type, name: raw.name, content: raw.content || '', color: raw.color || '#8e44ad', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'projects')      return { id: raw.id, name: raw.name, detailTitle: raw.detail_title, author: raw.author || '', link: raw.link || '', description: raw.description || '', tableText: raw.table_text || '', fileName: raw.file_name || '', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'meeting_docs')  return { id: raw.id, docType: raw.doc_type || 'rules', title: raw.title, text: raw.text || '', fileName: raw.file_name || '', date: raw.date || '', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'idea_posts')    return { id: raw.id, roomId: raw.room_id, author: raw.author || '', postDate: raw.post_date || '', title: raw.title, content: raw.content || '', fileName: raw.file_name || '', link: raw.link || '', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'events')        return { id: raw.id, date: raw.date, type: raw.type || 'meeting', title: raw.title, time: raw.time || '', note: raw.note || '', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'assets')        return { id: raw.id, category: raw.category, name: raw.name, qty: Number(raw.qty || 1), purchaseDate: raw.purchase_date || '', price: raw.price || '', location: raw.location || '', color: raw.color || '#e67e22', modifiedAt: raw.modified_at || __v22_isoNow() };
+      if (table === 'member_profiles') return { id: raw.id, memberName: raw.member_name, text: raw.profile_text || '', color: raw.color || '#16a085', modifiedAt: raw.modified_at || __v22_isoNow() };
+      return null;
+    }
+
+    async function __v22_loadTable(table, storeName) {
+      if (!supabaseClient) return;
+      if (table === 'rental_meta') { try { await __v24_loadRentalMetaTable(); } catch(_){} return; }
+      if (!__v23_syncable.has(table)) return; // v23: members+rentals만 sync (rental_meta는 v24 분기)
+      const { data, error } = await supabaseClient.from(table).select('*').order('id', { ascending: true });
+      if (error) { console.warn('v22 load ' + table + ' failed', error); return; }
+      const rows = (data || []).map(r => __v22_mapRow(table, r)).filter(Boolean);
+      // last-write-wins: 서버 rows vs 로컬 IndexedDB 의 rows 중 modifiedAt 비교
+      const localRows = await new Promise(res => {
+        if (!db || !storeName) return res([]);
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).getAll();
+        req.onsuccess = () => res(req.result || []);
+        req.onerror = () => res([]);
+      });
+      const serverMap = new Map(); rows.forEach(r => serverMap.set(String(r.id), r));
+      const finalRows = [];
+      // 서버 행을 받는데 로컬에 동일 id가 있고 로컬 modifiedAt이 더 늦으면 → 로컬 유지(서버 덮어쓰지 않음)
+      for (const r of rows) {
+        const local = localRows.find(l => String(l.id) === String(r.id));
+        if (local && local.modifiedAt && new Date(local.modifiedAt).getTime() > new Date(r.modifiedAt).getTime()) {
+          finalRows.push(local);
+        } else {
+          finalRows.push(r);
+        }
+      }
+      // 로컬에만 있는 새 행(클라우드 미동기화) 보존
+      for (const l of localRows) {
+        if (!serverMap.has(String(l.id))) finalRows.push(l);
+      }
+      finalRows.sort((a,b) => (a.id||0) - (b.id||0));
+      // IndexedDB 덮어쓰기
+      if (storeName && db) {
+        await new Promise(res => {
+          const tx = db.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          store.clear();
+          finalRows.forEach(r => store.put(r));
+          tx.oncomplete = () => res(); tx.onerror = () => res();
+        });
+      }
+      // 화면 rerender는 각 테이블의 기존 render 함수 호출 (이름 매핑)
+      if (table === 'activities'      && typeof renderActivityYearRooms === 'function') renderActivityYearRooms();
+      if (table === 'assets'          && typeof renderAssetCategories  === 'function') renderAssetCategories();
+      if (table === 'admin_rooms'     && typeof renderAdminRoomList    === 'function') renderAdminRoomList();
+      if (table === 'idea_rooms'      && typeof renderIdeaRooms        === 'function') renderIdeaRooms();
+      if (table === 'bylaw_rooms'     && typeof renderBylawRoomList    === 'function') renderBylawRoomList();
+      if (table === 'projects'        && typeof renderProjectRooms     === 'function') renderProjectRooms();
+      if (table === 'meeting_docs'    && typeof renderMeetingDocs      === 'function') { renderMeetingDocs('rules'); renderMeetingDocs('bylaws'); }
+      if (table === 'idea_posts'      && typeof renderIdeaPosts        === 'function' && currentIdeaRoomId) renderIdeaPosts(currentIdeaRoomId);
+      if (table === 'member_profiles' && typeof renderMemberProfileRoom=== 'function') renderMemberProfileRoom();
+      if (table === 'events'          && typeof renderCalendarGrid     === 'function') renderCalendarGrid();
+    }
+
+    async function __v22_upsert(table, storeName, record, isEdit) {
+      if (!supabaseClient) return record;
+      if (table === 'rental_meta') return record;
+      if (!__v23_syncable.has(table)) return record; // v23: members+rentals만 sync
+      const payload = { ...record };
+      payload.modified_at = __v22_isoNow();
+      // 컬럼명 매핑 (camelCase → snake_case)
+      const col = {};
+      if (table === 'activities') { col.activity_date = record.date; col.title = record.title; col.content = record.content || ''; col.file_name = record.fileName || ''; }
+      if (table === 'idea_rooms') { col.name = record.name; col.color = record.color || '#2980b9'; }
+      if (table === 'idea_posts') { col.room_id = record.roomId; col.author = record.author || ''; col.post_date = record.postDate || ''; col.title = record.title; col.content = record.content || ''; col.file_name = record.fileName || ''; col.link = record.link || ''; }
+      if (table === 'admin_rooms'){ col.name = record.name; col.content = record.content || ''; col.color = record.color || '#2c3e50'; }
+      if (table === 'bylaw_rooms'){ col.type = record.type; col.name = record.name; col.content = record.content || ''; col.color = record.color || '#8e44ad'; }
+      if (table === 'projects')   { col.name = record.name; col.detail_title = record.detailTitle || ''; col.author = record.author || ''; col.link = record.link || ''; col.description = record.description || ''; col.table_text = record.tableText || ''; col.file_name = record.fileName || ''; }
+      if (table === 'meeting_docs'){ col.doc_type = record.docType || 'rules'; col.title = record.title; col.text = record.text || ''; col.file_name = record.fileName || ''; col.date = record.date || ''; }
+      if (table === 'events')     { col.date = record.date; col.type = record.type || 'meeting'; col.title = record.title; col.time = record.time || ''; col.note = record.note || ''; }
+      if (table === 'assets')     { col.category = record.category; col.name = record.name; col.qty = Number(record.qty || 1); col.purchase_date = record.purchaseDate || ''; col.price = record.price || ''; col.location = record.location || ''; col.color = record.color || '#e67e22'; }
+      if (table === 'member_profiles') { col.member_name = record.memberName; col.profile_text = record.text || ''; col.color = record.color || '#16a085'; }
+      col.modified_at = payload.modified_at;
+      try {
+        let res;
+        if (isEdit && record.id) {
+          res = await supabaseClient.from(table).update(col).eq('id', record.id).select('*').single();
+        } else {
+          res = await supabaseClient.from(table).insert(col).select('*').single();
+        }
+        if (res.error) throw res.error;
+        if (res.data && res.data.id) {
+          const merged = { ...record, id: res.data.id, modifiedAt: res.data.modified_at || payload.modified_at };
+          if (storeName && db) {
+            await new Promise(res2 => {
+              const tx = db.transaction(storeName, 'readwrite');
+              const store = tx.objectStore(storeName);
+              store.put(merged); tx.oncomplete = () => res2(); tx.onerror = () => res2();
+            });
+          }
+          return merged;
+        }
+      } catch (err) {
+        console.warn('v22 upsert ' + table + ' failed (kept local only):', err);
+        try { if (typeof window.__v22_showOffline === 'function') window.__v22_showOffline(table, err.message); } catch (_) {}
+      }
+      return record;
+    }
+
+    async function __v22_delete(table, storeName, id) {
+      if (!supabaseClient) return;
+      if (table === 'rental_meta') { try { await __v24_loadRentalMetaTable(); } catch(_){} return; }
+      if (!__v23_syncable.has(table)) return;
+      try {
+        if (id != null) {
+          const { error } = await supabaseClient.from(table).delete().eq('id', id);
+          if (error) throw error;
+        }
+      } catch (err) {
+        console.warn('v22 delete ' + table + ' failed (kept local only):', err);
+        return;
+      }
+      if (storeName && db) {
+        try {
+          const tx = db.transaction(storeName, 'readwrite');
+          tx.objectStore(storeName).delete(id);
+        } catch (_) {}
+      }
+    }
+
+    // Realtime 구독: 9개 테이블 모두 postgres_changes 이벤트 청취
+    function __v22_subscribeRealtime() {
+      if (!supabaseClient || !supabaseClient.channel) return;
+      try {
+        const tables = ['members', 'rentals'];
+        tables.forEach(t => {
+          const ch = supabaseClient
+            .channel('v22_' + t)
+            .on('postgres_changes', { event: '*', schema: 'public', table: t }, () => {
+              // 매 변경마다 해당 테이블 다시 load (last-write-wins로 병합)
+              const map = {'members':null,'rentals':null}; // v23: members+rentals만
+
+              __v22_loadTable(t, map[t]).catch(e => console.warn('realtime load failed', t, e));
+            })
+            .subscribe();
+          __v22_channels.push(ch);
+        });
+        console.log('v22 realtime: ' + tables.length + ' channels subscribed');
+      } catch (e) { console.warn('v22 realtime subscribe failed:', e); }
+    }
+
+    // 페이지 로드 시 9개 테이블 일괄 load + Realtime 구독
+    async function __v22_init() {
+      // v23: members 1개만 v22 채널로 poll. rentals는 별도 rentalSyncTimer가 처리.
+      const maps = { 'members': null };
+
+      const client = await (async () => {
+        if (supabaseClient) return supabaseClient;
+        // members 코드 패턴 그대로 빌려서 재시도
+        for (let i = 0; i < 40; i++) {
+          if (window.supabase && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+            try {
+              supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+              window.supabaseClient = supabaseClient;
+              return supabaseClient;
+            } catch (_) {}
+          }
+          await new Promise(r => setTimeout(r, 250));
+        }
+        return null;
+      })();
+      if (!client) return;
+      for (const [t, store] of Object.entries(maps)) {
+        try { await __v22_loadTable(t, store); } catch (e) { console.warn('v22 init load failed', t, e); }
+      }
+      __v22_subscribeRealtime();
+      // 8초마다 안전 폴링 (Realtime 끊김 대비)
+      if (!window.__v22_pollTimer) {
+        window.__v22_pollTimer = setInterval(() => {
+          for (const [t, store] of Object.entries(maps)) {
+            __v22_loadTable(t, store).catch(() => {});
+          }
+        }, 8000);
+      }
+    }
+
+    // 사용자용 토스트: 오프라인 저장이 일어났을 때 표시
+    window.__v22_showOffline = function(table, msg) {
+      let bar = document.getElementById('v22_offline_bar');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'v22_offline_bar';
+        bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#f59e0b;color:#222;padding:10px 16px;font-size:13px;z-index:2147483647;text-align:center;box-shadow:0 -2px 8px rgba(0,0,0,.15)';
+        document.body.appendChild(bar);
+      }
+      bar.textContent = '⚠ ' + table + ' 저장: 서버 연결 실패(로컬에만 저장됨) — ' + (msg || '');
+      clearTimeout(window.__v22_barHideT);
+      window.__v22_barHideT = setTimeout(() => { if (bar && bar.parentNode) bar.parentNode.removeChild(bar); }, 6000);
+    };
+
+
     function cacheMembersLocally() {
       localStorage.setItem('memberListData', JSON.stringify(memberListData));
     }
@@ -1348,6 +1558,60 @@
       assetCategoryColors = JSON.parse(localStorage.getItem('assetCategoryColors') || '{}');
     let isAdminAuthenticated = false;
     let isRentalAuthenticated = false;
+    // -------- v24: rental pin shared via Supabase rental_meta (across all laptops) --------
+    let __v24_rentalMetaCache = { key: 'rental_room', password: '', ownerId: '', createdAt: '' };
+    async function __v24_getClient() {
+      if (window.__v24_supabaseClient) return window.__v24_supabaseClient;
+      if (window.supabaseClient) { window.__v24_supabaseClient = window.supabaseClient; return window.supabaseClient; }
+      for (let i = 0; i < 40; i++) {
+        if (window.supabase && SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
+          try {
+            const c = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+            window.supabaseClient = c; window.__v24_supabaseClient = c; return c;
+          } catch (_) {}
+        }
+        await new Promise(r => setTimeout(r, 250));
+      }
+      return null;
+    }
+    async function __v24_loadRentalMetaTable() {
+      try {
+        const c = await __v24_getClient(); if (!c) return;
+        const { data, error } = await c.from('rental_meta').select('key,password,owner_id,created_at,updated_at').eq('key','rental_room').maybeSingle();
+        if (error) { console.warn('rental_meta load:', error); return; }
+        if (data) {
+          __v24_rentalMetaCache.password  = data.password  ? String(data.password)  : '';
+          __v24_rentalMetaCache.ownerId   = data.owner_id  ? String(data.owner_id)  : '';
+          __v24_rentalMetaCache.createdAt = data.created_at? String(data.created_at) : '';
+          if (__v24_rentalMetaCache.password && typeof rentalRoomPassword !== 'undefined') {
+            rentalRoomPassword = __v24_rentalMetaCache.password;
+          }
+          if (__v24_rentalMetaCache.password && localStorage.getItem('rentalOwnerSet') !== 'true') {
+            localStorage.setItem('rentalOwnerSet', 'true');
+          }
+        }
+      } catch (e) { console.warn('rental_meta load failed', e); }
+    }
+    async function __v24_saveRentalMeta(password, ownerIdHint) {
+      const c = await __v24_getClient(); if (!c) throw new Error('서버 미연결');
+      const nowIso = new Date().toISOString();
+      const existingOwner   = __v24_rentalMetaCache.ownerId   || '';
+      const existingCreated = __v24_rentalMetaCache.createdAt || nowIso;
+      const payload = {
+        key: 'rental_room',
+        password: String(password),
+        owner_id: existingOwner || (ownerIdHint ? String(ownerIdHint) : ''),
+        created_at: existingCreated,
+        updated_at: nowIso
+      };
+      const { error } = await c.from('rental_meta').upsert(payload, { onConflict: 'key' });
+      if (error) throw error;
+      __v24_rentalMetaCache.password  = String(password);
+      __v24_rentalMetaCache.ownerId   = payload.owner_id;
+      __v24_rentalMetaCache.createdAt = payload.created_at;
+      if (typeof rentalRoomPassword !== 'undefined') rentalRoomPassword = __v24_rentalMetaCache.password;
+      return true;
+    }
     let isMasterAdminAuthenticated = false;
 
     const typeInfo = {
@@ -1829,17 +2093,17 @@
         alert('날짜, 제목, 그리고 파일을 모두 선택해주세요!');
         return;
       }
-      const file = fileInput.files[0];
       const [year, month] = dateVal.split('-');
       const tx = db.transaction('activities', 'readwrite');
       const store = tx.objectStore('activities');
-      store.add({ year, month, title, date: dateVal, fileName: file.name, fileBlob: file });
+      store.add({ year, month, title, date: dateVal, fileName: fileInput.files[0].name, fileBlob: fileInput.files[0] });
       tx.oncomplete = function() {
         alert('활동일지와 파일이 성공적으로 등록되었습니다!');
         document.getElementById('actDate').value = '';
         document.getElementById('actTitle').value = '';
         fileInput.value = '';
         renderActivityYearRooms();
+        // v23: 활동일지 sync OFF (__v23_syncable 가드도 통과 못함)
       };
     }
 
@@ -2101,10 +2365,22 @@
     }
 
     function renderRentalRoom() {
-      rentalRoomPassword = localStorage.getItem('rentalRoomPassword') || '';
-      document.getElementById('rentalPasswordSetupBox').style.display = rentalRoomPassword ? 'none' : 'block';
-      document.getElementById('rentalPasswordLoginBox').style.display = rentalRoomPassword && !isRentalAuthenticated ? 'block' : 'none';
-      document.getElementById('rentalManagerBox').style.display = isRentalAuthenticated ? 'block' : 'none';
+      // v24: 서버 비번 우선, 없으면 본인 노트북 localStorage. 둘 다 없으면 최초 1회 설정 박스.
+      const serverPw = (__v24_rentalMetaCache && __v24_rentalMetaCache.password) ? String(__v24_rentalMetaCache.password) : '';
+      const localOwner = localStorage.getItem('rentalOwnerSet') === 'true';
+      const localPw = localOwner ? (localStorage.getItem('rentalRoomPassword') || '') : '';
+      rentalRoomPassword = serverPw || localPw;
+      const hasPw = !!rentalRoomPassword;
+      const setupEl = document.getElementById('rentalPasswordSetupBox');
+      const loginEl = document.getElementById('rentalPasswordLoginBox');
+      const mgrEl   = document.getElementById('rentalManagerBox');
+      if (setupEl) setupEl.style.display = hasPw ? 'none' : 'block';
+      if (loginEl) loginEl.style.display = (hasPw && !isRentalAuthenticated) ? 'block' : 'none';
+      if (mgrEl)   mgrEl.style.display   =  isRentalAuthenticated ? 'block' : 'none';
+      const guideSetup = setupEl && setupEl.querySelector('.small-guide');
+      if (guideSetup && !hasPw) guideSetup.innerHTML = '처음 1회만 대여 담당자 분이 비번을 설정하세요. 설정 후에는 다른 노트북·다른 회원이 모두 입력 박스 만 보게 됩니다.';
+      const guideLogin = loginEl && loginEl.querySelector('.small-guide');
+      if (guideLogin && hasPw) guideLogin.innerHTML = '반납 / 대여비 완납 / 삭제는 대여 담당자만 가능합니다. 본인 비번을 입력해 입장하세요.';
       if (document.getElementById('rentalDate') && !document.getElementById('rentalDate').value) {
         document.getElementById('rentalDate').value = new Date().toISOString().slice(0, 10);
       }
@@ -2114,22 +2390,43 @@
     function setRentalPassword() {
       const pw = document.getElementById('newRentalPassword').value.trim();
       if (!pw) { alert('대여방 비밀번호를 입력하세요.'); return; }
+      if (pw.length < 2) { alert('2자 이상 입력하세요.'); return; }
+      if (__v24_rentalMetaCache.password && __v24_rentalMetaCache.password !== pw) {
+        if (!window.confirm('이미 다른 노트북에서 설정된 비번이 있습니다.\n비번을 새로 바꾸시겠습니까?')) return;
+      }
       localStorage.setItem('rentalRoomPassword', pw);
+      localStorage.setItem('rentalOwnerSet', 'true');
+      // v24: owner_id = 처음 비번 만든 사람. 절대 덮어쓰지 않음 → '관리자 됨' 방지
+      const myOwnerId = localStorage.getItem('rentalMyOwnerId') ||
+                        ('owner_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36));
+      localStorage.setItem('rentalMyOwnerId', myOwnerId);
       rentalRoomPassword = pw;
       document.getElementById('newRentalPassword').value = '';
-      alert('대여방 비밀번호가 설정되었습니다.');
-      renderRentalRoom();
+      __v24_saveRentalMeta(pw, myOwnerId).then(() => {
+        alert('대여방 비밀번호가 처음 한 번 설정되었습니다.\n이제 모든 노트북에서 설정 박스는 보이지 않고, 입력 박스만 표시됩니다.');
+        renderRentalRoom();
+      }).catch((err) => {
+        alert('서버 저장 실패(offline): 이 노트북에만 임시 저장됨.\n' + (err && err.message ? err.message : err));
+        renderRentalRoom();
+      });
     }
 
     function loginRentalRoom() {
       const inputPw = document.getElementById('rentalLoginPassword').value.trim();
-      rentalRoomPassword = localStorage.getItem('rentalRoomPassword') || '';
+      // v24: 서버 비번 우선 (모든 노트북 공통) → 본인 노트북 localStorage 차선
+      if (__v24_rentalMetaCache && __v24_rentalMetaCache.password) {
+        rentalRoomPassword = String(__v24_rentalMetaCache.password);
+      } else {
+        const localOwner = localStorage.getItem('rentalOwnerSet') === 'true';
+        rentalRoomPassword = localOwner ? (localStorage.getItem('rentalRoomPassword') || '') : '';
+      }
+      if (!inputPw) { alert('비밀번호를 입력하세요.'); return; }
       if (inputPw === rentalRoomPassword) {
         isRentalAuthenticated = true;
         document.getElementById('rentalLoginPassword').value = '';
         renderRentalRoom();
       } else {
-        alert('대여방 비밀번호가 일치하지 않습니다.');
+        alert('대여방 비밀번호가 일치하지 않습니다.\n(비밀번호를 잊었으면 → 회원 모임관리 > 관리자방 > 최고관리자 재설정 이용)');
       }
     }
 
@@ -2142,10 +2439,18 @@
       if (!isRentalAuthenticated) { alert('먼저 대여 담당자 로그인을 하세요.'); return; }
       const newPw = prompt('새 대여방 비밀번호를 입력하세요.');
       if (!newPw || !newPw.trim()) return;
-      localStorage.setItem('rentalRoomPassword', newPw.trim());
-      rentalRoomPassword = newPw.trim();
-      alert('대여방 비밀번호가 변경되었습니다.');
-      renderRentalRoom();
+      const pw = newPw.trim();
+      localStorage.setItem('rentalRoomPassword', pw);
+      localStorage.setItem('rentalOwnerSet','true');
+      rentalRoomPassword = pw;
+      // owner_id / created_at 보존 (변경은 비번만)
+      __v24_saveRentalMeta(pw, null).then(() => {
+        alert('대여방 비밀번호가 모든 노트북에 변경 적용되었습니다.');
+        renderRentalRoom();
+      }).catch((err) => {
+        alert('서버 저장 실패: 이 노트북만 변경됨.\n' + (err && err.message ? err.message : err));
+        renderRentalRoom();
+      });
     }
 
     async function addRentalEntry(ev) {
@@ -2397,6 +2702,7 @@
           document.getElementById('ideaRoomName').value = '';
           document.getElementById('ideaRoomColor').value = '#2980b9';
           renderIdeaRooms();
+          // v23: 아이디어방 sync OFF
         };
       });
     }
@@ -3111,12 +3417,18 @@
       if (!isMasterAdminAuthenticated) { alert('먼저 최고관리자 재설정 모드에 로그인하세요.'); return; }
       const newPw = prompt('새 대여방 비밀번호를 입력하세요.');
       if (!newPw || !newPw.trim()) return;
-      localStorage.setItem('rentalRoomPassword', newPw.trim());
-      rentalRoomPassword = newPw.trim();
+      const pw = newPw.trim();
+      localStorage.setItem('rentalRoomPassword', pw);
+      localStorage.setItem('rentalOwnerSet','true');
+      rentalRoomPassword = pw;
       isRentalAuthenticated = false;
-      alert('대여방 비밀번호가 재설정되었습니다. 새 비밀번호로 다시 로그인하세요.');
-      renderRentalRoom();
-      renderAdminRoom();
+      __v24_saveRentalMeta(pw, null).then(() => {
+        alert('대여방 비밀번호가 다른 노트북까지 전부 재설정되었습니다. 새 비밀번호로 다시 로그인하세요.');
+        renderRentalRoom(); renderAdminRoom();
+      }).catch((err) => {
+        alert('서버 저장 실패: 이 노트북만 변경됨.\n' + (err && err.message ? err.message : err));
+        renderRentalRoom(); renderAdminRoom();
+      });
     }
 
     function setAdminPassword() {
@@ -3299,12 +3611,13 @@
       store.getAll().onsuccess = function(e) {
         const exists = e.target.result.some(item => item.category === catName);
         if (exists) { alert('이미 존재하는 분류입니다.'); return; }
-        store.add({ category: catName, name: '', qty: '', place: '', status: '사용가능', note: '', imageBlob: null });
+        store.add({ category: catName, name: '', qty: '', place: '', status: '사용가능', note: '', imageBlob: null, color });
         assetCategoryColors[catName] = color;
         saveAssetCategoryColors();
         nameInput.value = '';
         if (colorInput) colorInput.value = '#e67e22';
         renderAssetCategories();
+        // v23: 관리방(자산) sync OFF
       };
     }
 
@@ -4014,6 +4327,9 @@
       renderRentalRoom();
       await loadMembersFromSupabase(false);
       await loadRentalsFromSupabase(false).catch(function(){});
+      // v24: rental_meta (공유 비번 1행) 1회 로드 + 8초 폴링
+      try { __v24_loadRentalMetaTable(); } catch(_){}
+      setInterval(function(){ try { __v24_loadRentalMetaTable(); } catch(_){} }, 8000);
       if (memberSyncTimer) clearInterval(memberSyncTimer);
       memberSyncTimer = setInterval(() => {
         loadMembersFromSupabase(false);
